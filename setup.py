@@ -3,7 +3,7 @@ import os.path
 
 setup(
     name = 'mandrill',
-    version = '1.0.3',
+    version = '1.0.4',
     author = 'Mandrill Devs',
     author_email = 'community@mandrill.com',
     description = 'A CLI client and Python API library for the Mandrill email as a service platform.',
@@ -11,7 +11,7 @@ setup(
     license = 'MIT',
     keywords = 'mandrill email api',
     url = 'http://mandrillapp.com/api/docs/clients/python/',
-    scripts = ['scripts/mandrill'],
+    scripts = ['scripts/mandrill', 'scripts/sendmail.mandrill'],
     py_modules = ['mandrill'],
     install_requires = ['requests >= 0.13.2', 'docopt == 0.4.0'],
     classifiers = [
