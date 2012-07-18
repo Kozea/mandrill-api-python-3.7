@@ -774,7 +774,7 @@ class Messages(object):
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
-                   [].status (string): the sending status of the recipient - either "sent", "queued", or "rejected"
+                   [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
 
 
         Raises:
@@ -846,7 +846,7 @@ class Messages(object):
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
-                   [].status (string): the sending status of the recipient - either "sent", "queued", or "rejected"
+                   [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
 
 
         Raises:
