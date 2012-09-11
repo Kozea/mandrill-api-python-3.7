@@ -86,7 +86,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.7'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.8'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -494,12 +494,15 @@ class Rejects(object):
     def __init__(self, master):
         self.master = master
 
-    def list(self, email=None):
+    def list(self, email=None, include_expired=False):
         """Retrieves your email rejection blacklist. You can provide an email
-address to limit the results. Returns up to 1000 results.
+address to limit the results. Returns up to 1000 results. By default,
+entries that have expired are excluded from the results; set
+include_expired to true to include them.
 
         Args:
            email (string): an optional email address to search by
+           include_expired (boolean): whether to include rejections that have already expired.
 
         Returns:
            array.  Up to 1000 rejection entries::
@@ -516,7 +519,7 @@ address to limit the results. Returns up to 1000 results.
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'email': email}
+        _params = {'email': email, 'include_expired': include_expired}
         return self.master.call('rejects/list', _params)
 
     def delete(self, email):
