@@ -86,7 +86,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.8'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.9'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -719,7 +719,7 @@ class Messages(object):
     def __init__(self, master):
         self.master = master
 
-    def send(self, message):
+    def send(self, message, async=False):
         """Send a new transactional message through Mandrill
 
         Args:
@@ -779,6 +779,7 @@ class Messages(object):
                        message.attachments[].content (string): the content of the attachment as a base64-encoded string
 
 
+           async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/send will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with fewer than 100 recipients; messages with more than 100 recipients are always sent asynchronously, regardless of the value of async.
 
         Returns:
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
@@ -791,10 +792,10 @@ class Messages(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'message': message}
+        _params = {'message': message, 'async': async}
         return self.master.call('messages/send', _params)
 
-    def send_template(self, template_name, template_content, message):
+    def send_template(self, template_name, template_content, message, async=False):
         """Send a new transactional message through Mandrill using a template
 
         Args:
@@ -858,6 +859,7 @@ class Messages(object):
                        message.attachments[].content (string): the content of the attachment as a base64-encoded string
 
 
+           async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/sendTemplate will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with fewer than 100 recipients; messages with more than 100 recipients are always sent asynchronously, regardless of the value of async.
 
         Returns:
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
@@ -871,7 +873,7 @@ class Messages(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'template_name': template_name, 'template_content': template_content, 'message': message}
+        _params = {'template_name': template_name, 'template_content': template_content, 'message': message, 'async': async}
         return self.master.call('messages/send-template', _params)
 
     def search(self, query='*', date_from=None, date_to=None, tags=None, senders=None, limit=100):
@@ -943,7 +945,7 @@ class Messages(object):
         _params = {'raw_message': raw_message}
         return self.master.call('messages/parse', _params)
 
-    def send_raw(self, raw_message, from_email=None, from_name=None, to=None):
+    def send_raw(self, raw_message, from_email=None, from_name=None, to=None, async=False):
         """Take a raw MIME document for a message, and send it exactly as if it were sent over the SMTP protocol
 
         Args:
@@ -952,6 +954,7 @@ class Messages(object):
            from_name (string|null): optionally define the sender alias
            to (array|null): optionally define the recipients to receive the message - otherwise we'll use the To, Cc, and Bcc headers provided in the document::
                to[] (string): the email address of the recipint
+           async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/sendRaw will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with fewer than 100 recipients; messages with more than 100 recipients are always sent asynchronously, regardless of the value of async.
 
         Returns:
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
@@ -964,7 +967,7 @@ class Messages(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to}
+        _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to, 'async': async}
         return self.master.call('messages/send-raw', _params)
 
 
