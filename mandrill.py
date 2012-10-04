@@ -86,7 +86,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.9'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.10'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -891,6 +891,7 @@ class Messages(object):
            array.  of structs for each matching message::
                [] (struct): the information for a single matching message::
                    [].ts (integer): the Unix timestamp from when this message was sent
+                   []._id (string): the message's unique id
                    [].sender (string): the email address of the sender
                    [].subject (string): the message's subject link
                    [].email (string): the recipient email address
@@ -900,6 +901,7 @@ class Messages(object):
                    [].opens (integer): how many times has this message been opened
                    [].clicks (integer): how many times has a link been clicked in this message
                    [].state (string): sending status of this message: sent, bounced, rejected
+                   [].metadata (struct): any custom metadata provided when the message was sent
 
 
         Raises:
