@@ -86,7 +86,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.10'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.11'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -986,7 +986,7 @@ class Urls(object):
                    [].url (string): the URL to be tracked
                    [].sent (integer): the number of emails that contained the URL
                    [].clicks (integer): the number of times the URL has been clicked from a tracked email
-                   [].unique_clicks (integer): the number of unique emails that have benerated clicks for this URL
+                   [].unique_clicks (integer): the number of unique emails that have generated clicks for this URL
 
 
         Raises:
@@ -1008,7 +1008,7 @@ class Urls(object):
                    [].url (string): the URL to be tracked
                    [].sent (integer): the number of emails that contained the URL
                    [].clicks (integer): the number of times the URL has been clicked from a tracked email
-                   [].unique_clicks (integer): the number of unique emails that have benerated clicks for this URL
+                   [].unique_clicks (integer): the number of unique emails that have generated clicks for this URL
 
 
         Raises:
