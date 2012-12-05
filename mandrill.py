@@ -86,7 +86,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.11'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.12'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -571,6 +571,34 @@ class Tags(object):
         """
         _params = {}
         return self.master.call('tags/list', _params)
+
+    def delete(self, tag):
+        """Deletes a tag permanently. Deleting a tag removes the tag from any messages
+that have been sent, and also deletes the tag's stats. There is no way to
+undo this operation, so use it carefully.
+
+        Args:
+           tag (string): a tag name
+
+        Returns:
+           struct.  the tag that was deleted::
+               tag (string): the actual tag as a string
+               sent (integer): the total number of messages sent with this tag
+               hard_bounces (integer): the total number of hard bounces by messages with this tag
+               soft_bounces (integer): the total number of soft bounces by messages with this tag
+               rejects (integer): the total number of rejected messages with this tag
+               complaints (integer): the total number of spam complaints received for messages with this tag
+               unsubs (integer): the total number of unsubscribe requests received for messages with this tag
+               opens (integer): the total number of times messages with this tag have been opened
+               clicks (integer): the total number of times tracked URLs in messages with this tag have been clicked
+
+        Raises:
+           InvalidTagNameError: The requested tag does not exist or contains invalid characters
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'tag': tag}
+        return self.master.call('tags/delete', _params)
 
     def info(self, tag):
         """Return more detailed information about a single tag, including aggregates of recent stats
