@@ -3,7 +3,7 @@ import os.path
 
 setup(
     name = 'mandrill',
-    version = '1.0.12',
+    version = '1.0.13',
     author = 'Mandrill Devs',
     author_email = 'community@mandrill.com',
     description = 'A CLI client and Python API library for the Mandrill email as a service platform.',
@@ -13,7 +13,7 @@ setup(
     url = 'https://bitbucket.org/mailchimp/mandrill-api-python/',
     scripts = ['scripts/mandrill', 'scripts/sendmail.mandrill'],
     py_modules = ['mandrill'],
-    install_requires = ['requests >= 0.13.2', 'docopt == 0.4.0'],
+    install_requires = ['requests >= 0.13.2, <= 0.14.2', 'docopt == 0.4.0'],
     classifiers = [
         'Development Status :: 4 - Beta',
         'Environment :: Console',

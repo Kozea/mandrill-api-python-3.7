@@ -24,6 +24,8 @@ class InvalidTemplateError(Error):
     pass
 class UnknownWebhookError(Error):
     pass
+class UnknownInboundDomainError(Error):
+    pass
 
 ROOT = 'https://mandrillapp.com/api/1.0/'
 ERROR_MAP = {
@@ -35,7 +37,8 @@ ERROR_MAP = {
     'Unknown_Sender': UnknownSenderError,
     'Unknown_Url': UnknownUrlError,
     'Invalid_Template': InvalidTemplateError,
-    'Unknown_Webhook': UnknownWebhookError
+    'Unknown_Webhook': UnknownWebhookError,
+    'Unknown_InboundDomain': UnknownInboundDomainError
 }
 
 logger = logging.getLogger('mandrill')
@@ -73,8 +76,10 @@ class Mandrill(object):
         self.templates = Templates(self)
         self.users = Users(self)
         self.rejects = Rejects(self)
+        self.inbound = Inbound(self)
         self.tags = Tags(self)
         self.messages = Messages(self)
+        self.internal = Internal(self)
         self.urls = Urls(self)
         self.webhooks = Webhooks(self)
         self.senders = Senders(self)
@@ -86,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.12'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.13'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -147,9 +152,10 @@ class Templates(object):
 
         Returns:
            struct.  the information saved about the new template::
-               name (string): the name of the template - draft version
+               slug (string): the immutable unique code name of the template
+               name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
-               publish_name (string): the name that the template was published as, if it has been published
+               publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -167,13 +173,14 @@ class Templates(object):
         """Get the information for an existing template
 
         Args:
-           name (string): the name of an existing template
+           name (string): the immutable name of an existing template
 
         Returns:
            struct.  the requested template information::
-               name (string): the name of the template - draft version
+               slug (string): the immutable unique code name of the template
+               name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
-               publish_name (string): the name that the template was published as, if it has been published
+               publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -191,15 +198,16 @@ class Templates(object):
         """Update the code for an existing template
 
         Args:
-           name (string): the name of an existing template
+           name (string): the immutable name of an existing template
            code (string): the new code for the template
            publish (boolean): set to false to update the draft version of the template without publishing
 
         Returns:
            struct.  the template that was updated::
-               name (string): the name of the template - draft version
+               slug (string): the immutable unique code name of the template
+               name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
-               publish_name (string): the name that the template was published as, if it has been published
+               publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -217,13 +225,14 @@ class Templates(object):
         """Publish the content for the template. Any new messages sent using this template will start using the content that was previously in draft.
 
         Args:
-           name (string): the name of an existing template
+           name (string): the immutable name of an existing template
 
         Returns:
            struct.  the template that was published::
-               name (string): the name of the template - draft version
+               slug (string): the immutable unique code name of the template
+               name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
-               publish_name (string): the name that the template was published as, if it has been published
+               publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -241,13 +250,14 @@ class Templates(object):
         """Delete a template
 
         Args:
-           name (string): the name of an existing template
+           name (string): the immutable name of an existing template
 
         Returns:
            struct.  the template that was deleted::
-               name (string): the name of the template - draft version
+               slug (string): the immutable unique code name of the template
+               name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
-               publish_name (string): the name that the template was published as, if it has been published
+               publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -267,9 +277,10 @@ class Templates(object):
         Returns:
            array.  an array of structs with information about each template::
                [] (struct): the information on each template in the account::
-                   [].name (string): the name of the template - draft version
+                   [].slug (string): the immutable unique code name of the template
+                   [].name (string): the name of the template
                    [].code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
-                   [].publish_name (string): the name that the template was published as, if it has been published
+                   [].publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                    [].publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
                    [].published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                    [].created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -316,7 +327,7 @@ class Templates(object):
         """Inject content and optionally merge fields into a template, returning the HTML that results
 
         Args:
-           template_name (string): the name of a template that exists in the user's account
+           template_name (string): the immutable name of a template that exists in the user's account
            template_content (array): an array of template content to render.  Each item in the array should be a struct with two keys - name: the name of the content block to set the content for, and content: the actual content to put into the block::
                template_content[] (struct): the injection of a single piece of content into a single editable region::
                    template_content[].name (string): the name of the mc:edit editable region to inject into
@@ -542,6 +553,69 @@ has an affect on your reputation.
         """
         _params = {'email': email}
         return self.master.call('rejects/delete', _params)
+
+
+class Inbound(object):
+    def __init__(self, master):
+        self.master = master
+
+    def domains(self, ):
+        """List the domains that have been configured for inbound delivery
+
+        Returns:
+           array.  the inbound domains associated with the account::
+               [] (array): the individual domain info
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {}
+        return self.master.call('inbound/domains', _params)
+
+    def routes(self, domain):
+        """List the mailbox routes defined for an inbound domain
+
+        Args:
+           domain (string): the domain to check
+
+        Returns:
+           array.  the routes associated with the domain::
+               [] (struct): the individual mailbox route::
+                   [].pattern (string): the search pattern that the mailbox name should match
+                   [].url (string): the webhook URL where inbound messages will be published
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownInboundDomainError: The requested inbound domain does not exist
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('inbound/routes', _params)
+
+    def send_raw(self, raw_message, to=None):
+        """Take a raw MIME document destined for a domain with inbound domains set up, and send it to the inbound hook exactly as if it had been sent over SMTP
+$sparam string $to[] the email address of the recipient @validate trim
+
+        Args:
+           raw_message (string): the full MIME document of an email message
+           to (array|null): optionally define the recipients to receive the message - otherwise we'll use the To, Cc, and Bcc headers provided in the document
+
+        Returns:
+           array.  an array of the information for each recipient in the message (usually one) that matched an inbound route::
+               [] (struct): the individual recipient information::
+                   [].email (struct): the email address of the matching recipient
+                   [].pattern (struct): the mailbox route pattern that the recipient matched
+                   [].url (struct): the webhook URL that the message was posted to
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'raw_message': raw_message, 'to': to}
+        return self.master.call('inbound/send-raw', _params)
 
 
 class Tags(object):
@@ -999,6 +1073,11 @@ class Messages(object):
         """
         _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to, 'async': async}
         return self.master.call('messages/send-raw', _params)
+
+
+class Internal(object):
+    def __init__(self, master):
+        self.master = master
 
 
 class Urls(object):
