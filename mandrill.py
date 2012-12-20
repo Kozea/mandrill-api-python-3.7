@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.13'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.14'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -564,7 +564,11 @@ class Inbound(object):
 
         Returns:
            array.  the inbound domains associated with the account::
-               [] (array): the individual domain info
+               [] (struct): the individual domain info::
+                   [].domain (string): the domain name that is accepting mail
+                   [].created_at (string): the date and time that the inbound domain was added as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].valid_mx (boolean): true if this inbound domain has successfully set up an MX record to deliver mail to the Mandrill servers
+
 
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
@@ -605,9 +609,9 @@ $sparam string $to[] the email address of the recipient @validate trim
         Returns:
            array.  an array of the information for each recipient in the message (usually one) that matched an inbound route::
                [] (struct): the individual recipient information::
-                   [].email (struct): the email address of the matching recipient
-                   [].pattern (struct): the mailbox route pattern that the recipient matched
-                   [].url (struct): the webhook URL that the message was posted to
+                   [].email (string): the email address of the matching recipient
+                   [].pattern (string): the mailbox route pattern that the recipient matched
+                   [].url (string): the webhook URL that the message was posted to
 
 
         Raises:
