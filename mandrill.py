@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.16'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.17'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -847,6 +847,7 @@ class Messages(object):
                message.track_opens (boolean): whether or not to turn on open tracking for the message
                message.track_clicks (boolean): whether or not to turn on click tracking for the message
                message.auto_text (boolean): whether or not to automatically generate a text part for messages that are not given text
+               message.inline_css (boolean): whether or not to automatically inline all CSS styles provided in the message HTML - only for HTML documents less than 256KB in size
                message.url_strip_qs (boolean): whether or not to strip the query string from URLs when aggregating tracked URL data
                message.preserve_recipients (boolean): whether or not to expose all recipients in to "To" header for each email
                message.bcc_address (string): an optional address to receive an exact copy of each recipient's email
@@ -935,6 +936,7 @@ class Messages(object):
                message.track_opens (boolean): whether or not to turn on open tracking for the message
                message.track_clicks (boolean): whether or not to turn on click tracking for the message
                message.auto_text (boolean): whether or not to automatically generate a text part for messages that are not given text
+               message.inline_css (boolean): whether or not to automatically inline all CSS styles provided in the message HTML - only for HTML documents less than 256KB in size
                message.url_strip_qs (boolean): whether or not to strip the query string from URLs when aggregating tracked URL data
                message.preserve_recipients (boolean): whether or not to expose all recipients in to "To" header for each email
                message.bcc_address (string): an optional address to receive an exact copy of each recipient's email
