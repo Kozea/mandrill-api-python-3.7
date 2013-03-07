@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.18'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.19'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -102,7 +102,12 @@ class Mandrill(object):
         self.log('Received %s in %.2fms: %s' % (r.status_code, complete_time * 1000, r.text))
         self.last_request = {'url': url, 'request_body': params, 'response_body': r.text, 'remote_addr': remote_addr, 'response': r, 'time': complete_time}
 
-        result = r.json
+        # requests 1.0.0 changed this from a property to a function
+        if callable(r.json):
+            result = r.json()
+        else:
+            result = r.json
+
         if r.status_code != requests.codes.ok:
             raise self.cast_error(result)
         return result
