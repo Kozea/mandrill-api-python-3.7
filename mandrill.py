@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.19'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.20'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -856,6 +856,8 @@ class Messages(object):
                message.url_strip_qs (boolean): whether or not to strip the query string from URLs when aggregating tracked URL data
                message.preserve_recipients (boolean): whether or not to expose all recipients in to "To" header for each email
                message.bcc_address (string): an optional address to receive an exact copy of each recipient's email
+               message.tracking_domain (string): a custom domain to use for tracking opens and clicks instead of mandrillapp.com
+               message.signing_domain (string): a custom domain to use for SPF/DKIM signing instead of mandrill (for "via" or "on behalf of" in email clients)
                message.merge (boolean): whether to evaluate merge tags in the message. Will automatically be set to true if either merge_vars or global_merge_vars are provided.
                message.global_merge_vars (array): global merge variables to use for all recipients. You can override these per recipient.::
                    message.global_merge_vars[] (struct): a single global merge variable::
@@ -946,6 +948,8 @@ class Messages(object):
                message.url_strip_qs (boolean): whether or not to strip the query string from URLs when aggregating tracked URL data
                message.preserve_recipients (boolean): whether or not to expose all recipients in to "To" header for each email
                message.bcc_address (string): an optional address to receive an exact copy of each recipient's email
+               message.tracking_domain (string): a custom domain to use for tracking opens and clicks instead of mandrillapp.com
+               message.signing_domain (string): a custom domain to use for SPF/DKIM signing instead of mandrill (for "via" or "on behalf of" in email clients)
                message.global_merge_vars (array): global merge variables to use for all recipients. You can override these per recipient.::
                    message.global_merge_vars[] (struct): a single global merge variable::
                        message.global_merge_vars[].name (string): the global merge variable's name. Merge variable names are case-insensitive and may not start with _
