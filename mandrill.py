@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.21'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.22'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -606,6 +606,9 @@ class Inbound(object):
     def send_raw(self, raw_message, to=None):
         """Take a raw MIME document destined for a domain with inbound domains set up, and send it to the inbound hook exactly as if it had been sent over SMTP
 $sparam string $to[] the email address of the recipient @validate trim
+$sparam string $mail_from the address specified in the MAIL FROM stage of the SMTP conversation @validate email. Optional; required for the SPF check.
+$sparam string $helo the identification provided by the client mta in the MTA state of the SMTP conversation. Optional; required for the SPF check.
+$sparam string $client_address the remote MTA's ip address. Optional; required for the SPF check.
 
         Args:
            raw_message (string): the full MIME document of an email message
