@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.25'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.26'})
         r.raise_for_status()
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
@@ -148,12 +148,16 @@ class Templates(object):
     def __init__(self, master):
         self.master = master
 
-    def add(self, name, code, publish=True):
+    def add(self, name, from_email=None, from_name=None, subject=None, code=None, text=None, publish=True):
         """Add a new template
 
         Args:
            name (string): the name for the new template - must be unique
+           from_email (string): a default sending address for emails sent using this template
+           from_name (string): a default from name to be used
+           subject (string): a default subject line to be used
            code (string): the HTML code for the template with mc:edit attributes for the editable elements
+           text (string): a default text part to be used when sending with this template
            publish (boolean): set to false to add a draft template without publishing
 
         Returns:
@@ -161,8 +165,16 @@ class Templates(object):
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
+               subject (string): the subject line of the template, if provided - draft version
+               from_email (string): the default sender address for the template, if provided - draft version
+               from_name (string): the default sender from name for the template, if provided - draft version
+               text (string): the default text part of messages sent with the template, if provided - draft version
                publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
+               publish_subject (string): the subject line of the template, if provided
+               publish_from_email (string): the default sender address for the template, if provided
+               publish_from_name (string): the default sender from name for the template, if provided
+               publish_text (string): the default text part of messages sent with the template, if provided
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
                updated_at (string): the date and time the template was last modified as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -172,7 +184,7 @@ class Templates(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'name': name, 'code': code, 'publish': publish}
+        _params = {'name': name, 'from_email': from_email, 'from_name': from_name, 'subject': subject, 'code': code, 'text': text, 'publish': publish}
         return self.master.call('templates/add', _params)
 
     def info(self, name):
@@ -186,8 +198,16 @@ class Templates(object):
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
+               subject (string): the subject line of the template, if provided - draft version
+               from_email (string): the default sender address for the template, if provided - draft version
+               from_name (string): the default sender from name for the template, if provided - draft version
+               text (string): the default text part of messages sent with the template, if provided - draft version
                publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
+               publish_subject (string): the subject line of the template, if provided
+               publish_from_email (string): the default sender address for the template, if provided
+               publish_from_name (string): the default sender from name for the template, if provided
+               publish_text (string): the default text part of messages sent with the template, if provided
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
                updated_at (string): the date and time the template was last modified as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -200,12 +220,16 @@ class Templates(object):
         _params = {'name': name}
         return self.master.call('templates/info', _params)
 
-    def update(self, name, code, publish=True):
+    def update(self, name, from_email=None, from_name=None, subject=None, code=None, text=None, publish=True):
         """Update the code for an existing template
 
         Args:
            name (string): the immutable name of an existing template
+           from_email (string): the new default sending address
+           from_name (string): the new default from name
+           subject (string): the new default subject line
            code (string): the new code for the template
+           text (string): the new default text part to be used
            publish (boolean): set to false to update the draft version of the template without publishing
 
         Returns:
@@ -213,8 +237,16 @@ class Templates(object):
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
+               subject (string): the subject line of the template, if provided - draft version
+               from_email (string): the default sender address for the template, if provided - draft version
+               from_name (string): the default sender from name for the template, if provided - draft version
+               text (string): the default text part of messages sent with the template, if provided - draft version
                publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
+               publish_subject (string): the subject line of the template, if provided
+               publish_from_email (string): the default sender address for the template, if provided
+               publish_from_name (string): the default sender from name for the template, if provided
+               publish_text (string): the default text part of messages sent with the template, if provided
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
                updated_at (string): the date and time the template was last modified as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -224,7 +256,7 @@ class Templates(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'name': name, 'code': code, 'publish': publish}
+        _params = {'name': name, 'from_email': from_email, 'from_name': from_name, 'subject': subject, 'code': code, 'text': text, 'publish': publish}
         return self.master.call('templates/update', _params)
 
     def publish(self, name):
@@ -238,8 +270,16 @@ class Templates(object):
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
+               subject (string): the subject line of the template, if provided - draft version
+               from_email (string): the default sender address for the template, if provided - draft version
+               from_name (string): the default sender from name for the template, if provided - draft version
+               text (string): the default text part of messages sent with the template, if provided - draft version
                publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
+               publish_subject (string): the subject line of the template, if provided
+               publish_from_email (string): the default sender address for the template, if provided
+               publish_from_name (string): the default sender from name for the template, if provided
+               publish_text (string): the default text part of messages sent with the template, if provided
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
                updated_at (string): the date and time the template was last modified as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -263,8 +303,16 @@ class Templates(object):
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
+               subject (string): the subject line of the template, if provided - draft version
+               from_email (string): the default sender address for the template, if provided - draft version
+               from_name (string): the default sender from name for the template, if provided - draft version
+               text (string): the default text part of messages sent with the template, if provided - draft version
                publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
+               publish_subject (string): the subject line of the template, if provided
+               publish_from_email (string): the default sender address for the template, if provided
+               publish_from_name (string): the default sender from name for the template, if provided
+               publish_text (string): the default text part of messages sent with the template, if provided
                published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
                updated_at (string): the date and time the template was last modified as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -286,8 +334,16 @@ class Templates(object):
                    [].slug (string): the immutable unique code name of the template
                    [].name (string): the name of the template
                    [].code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
+                   [].subject (string): the subject line of the template, if provided - draft version
+                   [].from_email (string): the default sender address for the template, if provided - draft version
+                   [].from_name (string): the default sender from name for the template, if provided - draft version
+                   [].text (string): the default text part of messages sent with the template, if provided - draft version
                    [].publish_name (string): the same as the template name - kept as a separate field for backwards compatibility
                    [].publish_code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements that are available as published, if it has been published
+                   [].publish_subject (string): the subject line of the template, if provided
+                   [].publish_from_email (string): the default sender address for the template, if provided
+                   [].publish_from_name (string): the default sender from name for the template, if provided
+                   [].publish_text (string): the default text part of messages sent with the template, if provided
                    [].published_at (string): the date and time the template was last published as a UTC string in YYYY-MM-DD HH:MM:SS format, or null if it has not been published
                    [].created_at (string): the date and time the template was first created as a UTC string in YYYY-MM-DD HH:MM:SS format
                    [].updated_at (string): the date and time the template was last modified as a UTC string in YYYY-MM-DD HH:MM:SS format
@@ -947,6 +1003,7 @@ class Messages(object):
                    template_content[].content (string): the content to inject
 
            message (struct): the other information on the message to send - same as /messages/send, but without the html content::
+               message.html (string): optional full HTML content to be sent if not in template
                message.text (string): optional full text content to be sent
                message.subject (string): the message subject
                message.from_email (string): the sender email address.
