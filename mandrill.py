@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.24'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.25'})
         r.raise_for_status()
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
@@ -1222,6 +1222,7 @@ class Webhooks(object):
                [] (struct): the inidividual webhook info::
                    [].id (integer): a unique integer indentifier for the webhook
                    [].url (string): The URL that the event data will be posted to
+                   [].description (string): a description of the webhook
                    [].events (array): The message events that will be posted to the hook::
                        [].events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1239,11 +1240,12 @@ class Webhooks(object):
         _params = {}
         return self.master.call('webhooks/list', _params)
 
-    def add(self, url, events=[]):
+    def add(self, url, description=None, events=[]):
         """Add a new webhook
 
         Args:
            url (string): the URL to POST batches of events
+           description (string): an optional description of the webhook
            events (array): an optional list of events that will be posted to the webhook::
                events[] (string): the individual event to listen for
 
@@ -1251,6 +1253,7 @@ class Webhooks(object):
            struct.  the information saved about the new webhook::
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
+               description (string): a description of the webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1264,7 +1267,7 @@ class Webhooks(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'url': url, 'events': events}
+        _params = {'url': url, 'description': description, 'events': events}
         return self.master.call('webhooks/add', _params)
 
     def info(self, id):
@@ -1277,6 +1280,7 @@ class Webhooks(object):
            struct.  the information about the webhook::
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
+               description (string): a description of the webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1294,12 +1298,13 @@ class Webhooks(object):
         _params = {'id': id}
         return self.master.call('webhooks/info', _params)
 
-    def update(self, id, url, events=[]):
+    def update(self, id, url, description=None, events=[]):
         """Update an existing webhook
 
         Args:
            id (integer): the unique identifier of a webhook belonging to this account
            url (string): the URL to POST batches of events
+           description (string): an optional description of the webhook
            events (array): an optional list of events that will be posted to the webhook::
                events[] (string): the individual event to listen for
 
@@ -1307,6 +1312,7 @@ class Webhooks(object):
            struct.  the information for the updated webhook::
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
+               description (string): a description of the webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1321,7 +1327,7 @@ class Webhooks(object):
            UnknownWebhookError: The requested webhook does not exist
            Error: A general Mandrill error has occurred
         """
-        _params = {'id': id, 'url': url, 'events': events}
+        _params = {'id': id, 'url': url, 'description': description, 'events': events}
         return self.master.call('webhooks/update', _params)
 
     def delete(self, id):
@@ -1334,6 +1340,7 @@ class Webhooks(object):
            struct.  the information for the deleted webhook::
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
+               description (string): a description of the webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
