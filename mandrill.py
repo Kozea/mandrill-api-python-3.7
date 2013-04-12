@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.23'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.24'})
         r.raise_for_status()
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
@@ -529,7 +529,18 @@ include_expired to true to include them.
                    [].created_at (string): when the email was added to the blacklist
                    [].expires_at (string): when the blacklist entry will expire (this may be in the past)
                    [].expired (boolean): whether the blacklist entry has expired
-                   [].Sender (struct): sender the sender that this blacklist entry applies to, or null if none.
+                   [].sender (struct): the sender that this blacklist entry applies to, or null if none.::
+                       [].sender.address (string): the sender's email address
+                       [].sender.created_at (string): the date and time that the sender was first seen by Mandrill as a UTC date string in YYYY-MM-DD HH:MM:SS format
+                       [].sender.sent (integer): the total number of messages sent by this sender
+                       [].sender.hard_bounces (integer): the total number of hard bounces by messages by this sender
+                       [].sender.soft_bounces (integer): the total number of soft bounces by messages by this sender
+                       [].sender.rejects (integer): the total number of rejected messages by this sender
+                       [].sender.complaints (integer): the total number of spam complaints received for messages by this sender
+                       [].sender.unsubs (integer): the total number of unsubscribe requests received for messages by this sender
+                       [].sender.opens (integer): the total number of times messages by this sender have been opened
+                       [].sender.clicks (integer): the total number of times tracked URLs in messages by this sender have been clicked
+
 
 
         Raises:
@@ -604,16 +615,16 @@ class Inbound(object):
         _params = {'domain': domain}
         return self.master.call('inbound/routes', _params)
 
-    def send_raw(self, raw_message, to=None):
+    def send_raw(self, raw_message, to=None, mail_from=None, helo=None, client_address=None):
         """Take a raw MIME document destined for a domain with inbound domains set up, and send it to the inbound hook exactly as if it had been sent over SMTP
-$sparam string $to[] the email address of the recipient @validate trim
-$sparam string $mail_from the address specified in the MAIL FROM stage of the SMTP conversation @validate email. Optional; required for the SPF check.
-$sparam string $helo the identification provided by the client mta in the MTA state of the SMTP conversation. Optional; required for the SPF check.
-$sparam string $client_address the remote MTA's ip address. Optional; required for the SPF check.
 
         Args:
            raw_message (string): the full MIME document of an email message
-           to (array|null): optionally define the recipients to receive the message - otherwise we'll use the To, Cc, and Bcc headers provided in the document
+           to (array|null): optionally define the recipients to receive the message - otherwise we'll use the To, Cc, and Bcc headers provided in the document::
+               to[] (string): the email address of the recipient
+           mail_from (string): the address specified in the MAIL FROM stage of the SMTP conversation. Required for the SPF check.
+           helo (string): the identification provided by the client mta in the MTA state of the SMTP conversation. Required for the SPF check.
+           client_address (string): the remote MTA's ip address. Optional; required for the SPF check.
 
         Returns:
            array.  an array of the information for each recipient in the message (usually one) that matched an inbound route::
@@ -627,7 +638,7 @@ $sparam string $client_address the remote MTA's ip address. Optional; required f
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'raw_message': raw_message, 'to': to}
+        _params = {'raw_message': raw_message, 'to': to, 'mail_from': mail_from, 'helo': helo, 'client_address': client_address}
         return self.master.call('inbound/send-raw', _params)
 
 
@@ -853,6 +864,7 @@ class Messages(object):
 
 
                message.headers (struct): optional extra headers to add to the message (currently only Reply-To and X-* headers are allowed)
+               message.important (boolean): whether or not this message is important, and should be delivered ahead of non-important messages
                message.track_opens (boolean): whether or not to turn on open tracking for the message
                message.track_clicks (boolean): whether or not to turn on click tracking for the message
                message.auto_text (boolean): whether or not to automatically generate a text part for messages that are not given text
@@ -946,6 +958,7 @@ class Messages(object):
 
 
                message.headers (struct): optional extra headers to add to the message (currently only Reply-To and X-* headers are allowed)
+               message.important (boolean): whether or not this message is important, and should be delivered ahead of non-important messages
                message.track_opens (boolean): whether or not to turn on open tracking for the message
                message.track_clicks (boolean): whether or not to turn on click tracking for the message
                message.auto_text (boolean): whether or not to automatically generate a text part for messages that are not given text
@@ -956,6 +969,7 @@ class Messages(object):
                message.bcc_address (string): an optional address to receive an exact copy of each recipient's email
                message.tracking_domain (string): a custom domain to use for tracking opens and clicks instead of mandrillapp.com
                message.signing_domain (string): a custom domain to use for SPF/DKIM signing instead of mandrill (for "via" or "on behalf of" in email clients)
+               message.merge (boolean): whether to evaluate merge tags in the message. Will automatically be set to true if either merge_vars or global_merge_vars are provided.
                message.global_merge_vars (array): global merge variables to use for all recipients. You can override these per recipient.::
                    message.global_merge_vars[] (struct): a single global merge variable::
                        message.global_merge_vars[].name (string): the global merge variable's name. Merge variable names are case-insensitive and may not start with _
@@ -999,7 +1013,7 @@ class Messages(object):
                        message.images[].content (string): the content of the image as a base64-encoded string
 
 
-           async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/sendTemplate will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with no more than 10 recipients; messages with more than 10 recipients are always sent asynchronously, regardless of the value of async.
+           async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/send will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with no more than 10 recipients; messages with more than 10 recipients are always sent asynchronously, regardless of the value of async.
 
         Returns:
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
