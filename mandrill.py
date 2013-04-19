@@ -91,7 +91,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.26'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.27'})
         r.raise_for_status()
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
@@ -582,7 +582,9 @@ include_expired to true to include them.
                [] (struct): the information for each rejection blacklist entry::
                    [].email (string): the email that is blocked
                    [].reason (string): the type of event (hard-bounce, soft-bounce, spam, unsub) that caused this rejection
+                   [].detail (string): extended details about the event, such as the SMTP diagnostic for bounces or the comment for manually-created rejections
                    [].created_at (string): when the email was added to the blacklist
+                   [].last_event_at (string): the timestamp of the most recent event that either created or renewed this rejection
                    [].expires_at (string): when the blacklist entry will expire (this may be in the past)
                    [].expired (boolean): whether the blacklist entry has expired
                    [].sender (struct): the sender that this blacklist entry applies to, or null if none.::
