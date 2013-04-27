@@ -82,6 +82,7 @@ class Mandrill(object):
         self.inbound = Inbound(self)
         self.tags = Tags(self)
         self.messages = Messages(self)
+        self.whitelists = Whitelists(self)
         self.internal = Internal(self)
         self.urls = Urls(self)
         self.webhooks = Webhooks(self)
@@ -94,7 +95,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.28'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.29'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -564,6 +565,27 @@ class Users(object):
 class Rejects(object):
     def __init__(self, master):
         self.master = master
+
+    def add(self, email):
+        """Adds an email to your email rejection blacklist. Addresses that you
+add manually will never expire and there is no reputation penalty
+for removing them from your blacklist. Attempting to blacklist an
+address that has been whitelisted will have no effect.
+
+        Args:
+           email (string): an email address to block
+
+        Returns:
+           struct.  a status object containing the address and the result of the operation::
+               email (string): the email address you provided
+               added (boolean): whether the operation succeeded
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'email': email}
+        return self.master.call('rejects/add', _params)
 
     def list(self, email=None, include_expired=False):
         """Retrieves your email rejection blacklist. You can provide an email
@@ -1191,6 +1213,71 @@ class Messages(object):
         """
         _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to, 'async': async}
         return self.master.call('messages/send-raw', _params)
+
+
+class Whitelists(object):
+    def __init__(self, master):
+        self.master = master
+
+    def add(self, email):
+        """Adds an email to your email rejection whitelist. If the address is
+currently on your blacklist, that blacklist entry will be removed
+automatically.
+
+        Args:
+           email (string): an email address to add to the whitelist
+
+        Returns:
+           struct.  a status object containing the address and the result of the operation::
+               email (string): the email address you provided
+               whether (boolean): the operation succeeded
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'email': email}
+        return self.master.call('whitelists/add', _params)
+
+    def list(self, email=None):
+        """Retrieves your email rejection whitelist. You can provide an email
+address or search prefix to limit the results. Returns up to 1000 results.
+
+        Args:
+           email (string): an optional email address or prefix to search by
+
+        Returns:
+           array.  up to 1000 whitelist entries::
+               [] (struct): the information for each whitelist entry::
+                   [].email (string): the email that is whitelisted
+                   [].detail (string): a description of why the email was whitelisted
+                   [].created_at (string): when the email was added to the whitelist
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'email': email}
+        return self.master.call('whitelists/list', _params)
+
+    def delete(self, email):
+        """Removes an email address from the whitelist.
+
+        Args:
+           email (string): the email address to remove from the whitelist
+
+        Returns:
+           struct.  a status object containing the address and whether the deletion succeeded::
+               email (string): the email address that was removed from the blacklist
+               deleted (boolean): whether the address was deleted successfully
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'email': email}
+        return self.master.call('whitelists/delete', _params)
 
 
 class Internal(object):
