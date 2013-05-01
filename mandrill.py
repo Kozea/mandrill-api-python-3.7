@@ -95,7 +95,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.29'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.30'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -220,7 +220,7 @@ class Templates(object):
         return self.master.call('templates/info', _params)
 
     def update(self, name, from_email=None, from_name=None, subject=None, code=None, text=None, publish=True):
-        """Update the code for an existing template
+        """Update the code for an existing template. If null is provided for any fields, the values will remain unchanged.
 
         Args:
            name (string): the immutable name of an existing template
