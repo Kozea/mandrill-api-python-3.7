@@ -95,7 +95,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.30'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.31'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1367,6 +1367,7 @@ class Webhooks(object):
                    [].id (integer): a unique integer indentifier for the webhook
                    [].url (string): The URL that the event data will be posted to
                    [].description (string): a description of the webhook
+                   [].auth_key (string): the key used to requests for this webhook
                    [].events (array): The message events that will be posted to the hook::
                        [].events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1398,6 +1399,7 @@ class Webhooks(object):
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
                description (string): a description of the webhook
+               auth_key (string): the key used to requests for this webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1425,6 +1427,7 @@ class Webhooks(object):
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
                description (string): a description of the webhook
+               auth_key (string): the key used to requests for this webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1457,6 +1460,7 @@ class Webhooks(object):
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
                description (string): a description of the webhook
+               auth_key (string): the key used to requests for this webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
@@ -1485,6 +1489,7 @@ class Webhooks(object):
                id (integer): a unique integer indentifier for the webhook
                url (string): The URL that the event data will be posted to
                description (string): a description of the webhook
+               auth_key (string): the key used to requests for this webhook
                events (array): The message events that will be posted to the hook::
                    events[] (string): the individual message event (send, hard_bounce, soft_bounce, open, click, spam, unsub, or reject)
 
