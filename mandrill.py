@@ -29,6 +29,8 @@ class UnknownWebhookError(Error):
     pass
 class UnknownInboundDomainError(Error):
     pass
+class UnknownExportError(Error):
+    pass
 
 ROOT = 'https://mandrillapp.com/api/1.0/'
 ERROR_MAP = {
@@ -41,7 +43,8 @@ ERROR_MAP = {
     'Unknown_Url': UnknownUrlError,
     'Invalid_Template': InvalidTemplateError,
     'Unknown_Webhook': UnknownWebhookError,
-    'Unknown_InboundDomain': UnknownInboundDomainError
+    'Unknown_InboundDomain': UnknownInboundDomainError,
+    'Unknown_Export': UnknownExportError
 }
 
 logger = logging.getLogger('mandrill')
@@ -77,6 +80,7 @@ class Mandrill(object):
         self.apikey = apikey
 
         self.templates = Templates(self)
+        self.exports = Exports(self)
         self.users = Users(self)
         self.rejects = Rejects(self)
         self.inbound = Inbound(self)
@@ -95,7 +99,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.31'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.32'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -411,6 +415,141 @@ class Templates(object):
         """
         _params = {'template_name': template_name, 'template_content': template_content, 'merge_vars': merge_vars}
         return self.master.call('templates/render', _params)
+
+
+class Exports(object):
+    def __init__(self, master):
+        self.master = master
+
+    def info(self, id):
+        """Returns information about an export job. If the export job's state is 'complete',
+the returned data will include a URL you can use to fetch the results. Every export
+job produces a zip archive, but the format of the archive is distinct for each job
+type. The api calls that initiate exports include more details about the output format
+for that job type.
+
+        Args:
+           id (string): an export job identifier
+
+        Returns:
+           struct.  the information about the export::
+               id (string): the unique identifier for this Export. Use this identifier when checking the export job's status
+               created_at (string): the date and time that the export job was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               type (string): the type of the export job - activity, reject, or whitelist
+               finished_at (string): the date and time that the export job was finished as a UTC string in YYYY-MM-DD HH:MM:SS format
+               state (string): the export job's state - waiting, working, complete, error, or expired.
+               result_url (string): the url for the export job's results, if the job is completed.
+
+        Raises:
+           UnknownExportError: The requested export job does not exist
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'id': id}
+        return self.master.call('exports/info', _params)
+
+    def list(self, ):
+        """Returns a list of your exports.
+
+        Returns:
+           array.  the account's exports::
+               [] (struct): the individual export info::
+                   [].id (string): the unique identifier for this Export. Use this identifier when checking the export job's status
+                   [].created_at (string): the date and time that the export job was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].type (string): the type of the export job - activity, reject, or whitelist
+                   [].finished_at (string): the date and time that the export job was finished as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].state (string): the export job's state - waiting, working, complete, error, or expired.
+                   [].result_url (string): the url for the export job's results, if the job is completed.
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {}
+        return self.master.call('exports/list', _params)
+
+    def rejects(self, notify_email=None):
+        """Begins an export of your rejection blacklist. The blacklist will be exported to a zip archive
+containing a single file named rejects.csv that includes the following fields: email,
+reason, detail, created_at, expires_at, last_event_at, expires_at.
+
+        Args:
+           notify_email (string): an optional email address to notify when the export job has finished.
+
+        Returns:
+           struct.  information about the rejects export job that was started::
+               id (string): the unique identifier for this Export. Use this identifier when checking the export job's status
+               created_at (string): the date and time that the export job was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               type (string): the type of the export job
+               finished_at (string): the date and time that the export job was finished as a UTC string in YYYY-MM-DD HH:MM:SS format, or null for jobs that have not run
+               state (string): the export job's state
+               result_url (string): the url for the export job's results, if the job is complete
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'notify_email': notify_email}
+        return self.master.call('exports/rejects', _params)
+
+    def whitelist(self, notify_email=None):
+        """Begins an export of your rejection whitelist. The whitelist will be exported to a zip archive
+containing a single file named whitelist.csv that includes the following fields:
+email, detail, created_at.
+
+        Args:
+           notify_email (string): an optional email address to notify when the export job has finished.
+
+        Returns:
+           struct.  information about the whitelist export job that was started::
+               id (string): the unique identifier for this Export. Use this identifier when checking the export job's status
+               created_at (string): the date and time that the export job was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               type (string): the type of the export job
+               finished_at (string): the date and time that the export job was finished as a UTC string in YYYY-MM-DD HH:MM:SS format, or null for jobs that have not run
+               state (string): the export job's state
+               result_url (string): the url for the export job's results, if the job is complete
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'notify_email': notify_email}
+        return self.master.call('exports/whitelist', _params)
+
+    def activity(self, notify_email=None, date_from=None, date_to=None, tags=None, senders=None, states=None):
+        """Begins an export of your activity history. The activity will be exported to a zaip archive
+containing a single file named activity.csv in the same format as you would be able to export
+from your account's activity view. It includes the following fields: Date, Email Address,
+Sender, Subject, Status, Tags, Opens, Clicks, Bounce Detail. If you have configured any custom
+metadata fields, they will be included in the exported data.
+
+        Args:
+           notify_email (string): an optional email address to notify when the export job has finished
+           date_from (string): start date as a UTC string in YYYY-MM-DD HH:MM:SS format
+           date_to (string): end date as a UTC string in YYYY-MM-DD HH:MM:SS format
+           tags (array): an array of tag names to narrow the export to; will match messages that contain ANY of the tags::
+               tags[] (string): a tag name
+           senders (array): an array of senders to narrow the export to::
+               senders[] (string): a sender address
+           states (array): an array of states to narrow the export to; messages with ANY of the states will be included::
+               states[] (string): a message state
+
+        Returns:
+           struct.  information about the activity export job that was started::
+               id (string): the unique identifier for this Export. Use this identifier when checking the export job's status
+               created_at (string): the date and time that the export job was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               type (string): the type of the export job
+               finished_at (string): the date and time that the export job was finished as a UTC string in YYYY-MM-DD HH:MM:SS format, or null for jobs that have not run
+               state (string): the export job's state
+               result_url (string): the url for the export job's results, if the job is complete
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'notify_email': notify_email, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders, 'states': states}
+        return self.master.call('exports/activity', _params)
 
 
 class Users(object):
@@ -1363,7 +1502,7 @@ class Webhooks(object):
 
         Returns:
            array.  the webhooks associated with the account::
-               [] (struct): the inidividual webhook info::
+               [] (struct): the individual webhook info::
                    [].id (integer): a unique integer indentifier for the webhook
                    [].url (string): The URL that the event data will be posted to
                    [].description (string): a description of the webhook
