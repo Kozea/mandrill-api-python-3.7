@@ -99,7 +99,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.33'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.34'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1143,6 +1143,7 @@ class Messages(object):
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
                    [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
+                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
                    []._id (string): the message's unique id
 
 
@@ -1238,6 +1239,7 @@ class Messages(object):
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
                    [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
+                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
                    []._id (string): the message's unique id
 
 
@@ -1343,6 +1345,7 @@ class Messages(object):
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
                    [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
+                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
                    []._id (string): the message's unique id
 
 

@@ -3,7 +3,7 @@ import os.path
 
 setup(
     name = 'mandrill',
-    version = '1.0.33',
+    version = '1.0.34',
     author = 'Mandrill Devs',
     author_email = 'community@mandrill.com',
     description = 'A CLI client and Python API library for the Mandrill email as a service platform.',
