@@ -15,6 +15,8 @@ class InvalidKeyError(Error):
     pass
 class UnknownTemplateError(Error):
     pass
+class ServiceUnavailableError(Error):
+    pass
 class InvalidTagNameError(Error):
     pass
 class InvalidRejectError(Error):
@@ -37,6 +39,7 @@ ERROR_MAP = {
     'ValidationError': ValidationError,
     'Invalid_Key': InvalidKeyError,
     'Unknown_Template': UnknownTemplateError,
+    'ServiceUnavailable': ServiceUnavailableError,
     'Invalid_Tag_Name': InvalidTagNameError,
     'Invalid_Reject': InvalidRejectError,
     'Unknown_Sender': UnknownSenderError,
@@ -99,7 +102,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.34'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.35'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1281,6 +1284,7 @@ class Messages(object):
 
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
+           ServiceUnavailableError: 
            Error: A general Mandrill error has occurred
         """
         _params = {'query': query, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders, 'limit': limit}
