@@ -102,7 +102,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.35'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.36'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -521,7 +521,7 @@ email, detail, created_at.
         return self.master.call('exports/whitelist', _params)
 
     def activity(self, notify_email=None, date_from=None, date_to=None, tags=None, senders=None, states=None):
-        """Begins an export of your activity history. The activity will be exported to a zaip archive
+        """Begins an export of your activity history. The activity will be exported to a zip archive
 containing a single file named activity.csv in the same format as you would be able to export
 from your account's activity view. It includes the following fields: Date, Email Address,
 Sender, Subject, Status, Tags, Opens, Clicks, Bounce Detail. If you have configured any custom
