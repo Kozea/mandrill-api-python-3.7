@@ -13,9 +13,13 @@ class ValidationError(Error):
     pass
 class InvalidKeyError(Error):
     pass
+class PaymentRequiredError(Error):
+    pass
 class UnknownTemplateError(Error):
     pass
 class ServiceUnavailableError(Error):
+    pass
+class UnknownMessageError(Error):
     pass
 class InvalidTagNameError(Error):
     pass
@@ -38,8 +42,10 @@ ROOT = 'https://mandrillapp.com/api/1.0/'
 ERROR_MAP = {
     'ValidationError': ValidationError,
     'Invalid_Key': InvalidKeyError,
+    'PaymentRequired': PaymentRequiredError,
     'Unknown_Template': UnknownTemplateError,
     'ServiceUnavailable': ServiceUnavailableError,
+    'Unknown_Message': UnknownMessageError,
     'Invalid_Tag_Name': InvalidTagNameError,
     'Invalid_Reject': InvalidRejectError,
     'Unknown_Sender': UnknownSenderError,
@@ -102,7 +108,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.37'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.38'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -694,6 +700,8 @@ class Users(object):
                    [].unsubs (integer): the total number of unsubscribe requests received for messages by this sender
                    [].opens (integer): the total number of times messages by this sender have been opened
                    [].clicks (integer): the total number of times tracked URLs in messages by this sender have been clicked
+                   [].unique_opens (integer): the number of unique opens for emails sent for this sender
+                   [].unique_clicks (integer): the number of unique clicks for emails sent for this sender
 
 
         Raises:
@@ -760,6 +768,8 @@ include_expired to true to include them.
                        [].sender.unsubs (integer): the total number of unsubscribe requests received for messages by this sender
                        [].sender.opens (integer): the total number of times messages by this sender have been opened
                        [].sender.clicks (integer): the total number of times tracked URLs in messages by this sender have been clicked
+                       [].sender.unique_opens (integer): the number of unique opens for emails sent for this sender
+                       [].sender.unique_clicks (integer): the number of unique clicks for emails sent for this sender
 
 
 
@@ -881,6 +891,8 @@ class Tags(object):
                    [].unsubs (integer): the total number of unsubscribe requests received for messages with this tag
                    [].opens (integer): the total number of times messages with this tag have been opened
                    [].clicks (integer): the total number of times tracked URLs in messages with this tag have been clicked
+                   [].unique_opens (integer): the number of unique opens for emails sent with this tag
+                   [].unique_clicks (integer): the number of unique clicks for emails sent with this tag
 
 
         Raises:
@@ -909,6 +921,8 @@ undo this operation, so use it carefully.
                unsubs (integer): the total number of unsubscribe requests received for messages with this tag
                opens (integer): the total number of times messages with this tag have been opened
                clicks (integer): the total number of times tracked URLs in messages with this tag have been clicked
+               unique_opens (integer): the number of unique opens for emails sent with this tag
+               unique_clicks (integer): the number of unique clicks for emails sent with this tag
 
         Raises:
            InvalidTagNameError: The requested tag does not exist or contains invalid characters
@@ -1067,7 +1081,7 @@ class Messages(object):
     def __init__(self, master):
         self.master = master
 
-    def send(self, message, async=False, ip_pool=None):
+    def send(self, message, async=False, ip_pool=None, send_at=None):
         """Send a new transactional message through Mandrill
 
         Args:
@@ -1141,24 +1155,26 @@ class Messages(object):
 
            async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/send will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with no more than 10 recipients; messages with more than 10 recipients are always sent asynchronously, regardless of the value of async.
            ip_pool (string): the name of the dedicated ip pool that should be used to send the message. If you do not have any dedicated IPs, this parameter has no effect. If you specify a pool that does not exist, your default pool will be used instead.
+           send_at (string): when this message should be sent as a UTC timestamp in YYYY-MM-DD HH:MM:SS format. If you specify a time in the past, the message will be sent immediately.
 
         Returns:
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
-                   [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
+                   [].status (string): the sending status of the recipient - either "sent", "queued", "scheduled", "rejected", or "invalid"
                    [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
                    []._id (string): the message's unique id
 
 
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
+           PaymentRequiredError: The requested feature requires payment.
            Error: A general Mandrill error has occurred
         """
-        _params = {'message': message, 'async': async, 'ip_pool': ip_pool}
+        _params = {'message': message, 'async': async, 'ip_pool': ip_pool, 'send_at': send_at}
         return self.master.call('messages/send', _params)
 
-    def send_template(self, template_name, template_content, message, async=False, ip_pool=None):
+    def send_template(self, template_name, template_content, message, async=False, ip_pool=None, send_at=None):
         """Send a new transactional message through Mandrill using a template
 
         Args:
@@ -1238,9 +1254,10 @@ class Messages(object):
 
            async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/send will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with no more than 10 recipients; messages with more than 10 recipients are always sent asynchronously, regardless of the value of async.
            ip_pool (string): the name of the dedicated ip pool that should be used to send the message. If you do not have any dedicated IPs, this parameter has no effect. If you specify a pool that does not exist, your default pool will be used instead.
+           send_at (string): when this message should be sent as a UTC timestamp in YYYY-MM-DD HH:MM:SS format. If you specify a time in the past, the message will be sent immediately.
 
         Returns:
-           array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
+           array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", "scheduled", or "rejected"::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
                    [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
@@ -1250,10 +1267,11 @@ class Messages(object):
 
         Raises:
            UnknownTemplateError: The requested template does not exist
+           PaymentRequiredError: The requested feature requires payment.
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'template_name': template_name, 'template_content': template_content, 'message': message, 'async': async, 'ip_pool': ip_pool}
+        _params = {'template_name': template_name, 'template_content': template_content, 'message': message, 'async': async, 'ip_pool': ip_pool, 'send_at': send_at}
         return self.master.call('messages/send-template', _params)
 
     def search(self, query='*', date_from=None, date_to=None, tags=None, senders=None, limit=100):
@@ -1335,7 +1353,7 @@ class Messages(object):
         _params = {'raw_message': raw_message}
         return self.master.call('messages/parse', _params)
 
-    def send_raw(self, raw_message, from_email=None, from_name=None, to=None, async=False, ip_pool=None):
+    def send_raw(self, raw_message, from_email=None, from_name=None, to=None, async=False, ip_pool=None, send_at=None):
         """Take a raw MIME document for a message, and send it exactly as if it were sent over the SMTP protocol
 
         Args:
@@ -1346,22 +1364,94 @@ class Messages(object):
                to[] (string): the email address of the recipint
            async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/sendRaw will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with no more than 10 recipients; messages with more than 10 recipients are always sent asynchronously, regardless of the value of async.
            ip_pool (string): the name of the dedicated ip pool that should be used to send the message. If you do not have any dedicated IPs, this parameter has no effect. If you specify a pool that does not exist, your default pool will be used instead.
+           send_at (string): when this message should be sent as a UTC timestamp in YYYY-MM-DD HH:MM:SS format. If you specify a time in the past, the message will be sent immediately.
 
         Returns:
            array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
-                   [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
+                   [].status (string): the sending status of the recipient - either "sent", "queued", "scheduled", "rejected", or "invalid"
                    [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
                    []._id (string): the message's unique id
 
 
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
+           PaymentRequiredError: The requested feature requires payment.
            Error: A general Mandrill error has occurred
         """
-        _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to, 'async': async, 'ip_pool': ip_pool}
+        _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to, 'async': async, 'ip_pool': ip_pool, 'send_at': send_at}
         return self.master.call('messages/send-raw', _params)
+
+    def list_scheduled(self, to=None):
+        """Queries your scheduled emails by sender or recipient, or both.
+
+        Args:
+           to (string): an optional recipient address to restrict results to
+
+        Returns:
+           array.  a list of up to 1000 scheduled emails::
+               [] (struct): a scheduled email::
+                   []._id (string): the scheduled message id
+                   [].created_at (string): the UTC timestamp when the message was created, in YYYY-MM-DD HH:MM:SS format
+                   [].send_at (string): the UTC timestamp when the message will be sent, in YYYY-MM-DD HH:MM:SS format
+                   [].from_email (string): the email's sender address
+                   [].to (string): the email's recipient
+                   [].subject (string): the email's subject
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'to': to}
+        return self.master.call('messages/list-scheduled', _params)
+
+    def cancel_scheduled(self, id):
+        """Cancels a scheduled email.
+
+        Args:
+           id (string): a scheduled email id, as returned by any of the messages/send calls or messages/list-scheduled
+
+        Returns:
+           struct.  information about the scheduled email that was cancelled.::
+               _id (string): the scheduled message id
+               created_at (string): the UTC timestamp when the message was created, in YYYY-MM-DD HH:MM:SS format
+               send_at (string): the UTC timestamp when the message will be sent, in YYYY-MM-DD HH:MM:SS format
+               from_email (string): the email's sender address
+               to (string): the email's recipient
+               subject (string): the email's subject
+
+        Raises:
+           UnknownMessageError: The provided message id does not exist.
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'id': id}
+        return self.master.call('messages/cancel-scheduled', _params)
+
+    def reschedule(self, id, send_at):
+        """Reschedules a scheduled email.
+
+        Args:
+           id (string): a scheduled email id, as returned by any of the messages/send calls or messages/list-scheduled
+           send_at (string): the new UTC timestamp when the message should sent. Mandrill can't time travel, so if you specify a time in past the message will be sent immediately
+
+        Returns:
+           struct.  information about the scheduled email that was rescheduled.::
+               _id (string): the scheduled message id
+               created_at (string): the UTC timestamp when the message was created, in YYYY-MM-DD HH:MM:SS format
+               send_at (string): the UTC timestamp when the message will be sent, in YYYY-MM-DD HH:MM:SS format
+               from_email (string): the email's sender address
+               to (string): the email's recipient
+               subject (string): the email's subject
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'id': id, 'send_at': send_at}
+        return self.master.call('messages/reschedule', _params)
 
 
 class Whitelists(object):
@@ -1677,6 +1767,8 @@ class Senders(object):
                    [].unsubs (integer): the total number of unsubscribe requests received for messages by this sender
                    [].opens (integer): the total number of times messages by this sender have been opened
                    [].clicks (integer): the total number of times tracked URLs in messages by this sender have been clicked
+                   [].unique_opens (integer): the number of unique opens for emails sent for this sender
+                   [].unique_clicks (integer): the number of unique clicks for emails sent for this sender
 
 
         Raises:
