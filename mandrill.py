@@ -108,7 +108,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.39'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.40'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1297,7 +1297,24 @@ class Messages(object):
                        [].tags[] (string): individual tag on this message
 
                    [].opens (integer): how many times has this message been opened
+                   [].opens_detail (array): list of individual opens for the message::
+                       [].opens_detail[] (struct): information on an individual open::
+                           [].opens_detail[].ts (integer): the unix timestamp from when the message was opened
+                           [].opens_detail[].ip (string): the IP address that generated the open
+                           [].opens_detail[].location (string): the approximate region and country that the opening IP is located
+                           [].opens_detail[].ua (string): the email client or browser data of the open
+
+
                    [].clicks (integer): how many times has a link been clicked in this message
+                   [].clicks_detail (array): list of individual clicks for the message::
+                       [].clicks_detail[] (struct): information on an individual click::
+                           [].clicks_detail[].ts (integer): the unix timestamp from when the message was clicked
+                           [].clicks_detail[].url (string): the URL that was clicked on
+                           [].clicks_detail[].ip (string): the IP address that generated the click
+                           [].clicks_detail[].location (string): the approximate region and country that the clicking IP is located
+                           [].clicks_detail[].ua (string): the email client or browser data of the click
+
+
                    [].state (string): sending status of this message: sent, bounced, rejected
                    [].metadata (struct): any custom metadata provided when the message was sent
 
