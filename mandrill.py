@@ -108,7 +108,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.41'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.42'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -883,6 +883,7 @@ class Tags(object):
            array.  a list of user-defined tags::
                [] (struct): a user-defined tag::
                    [].tag (string): the actual tag as a string
+                   [].reputation (integer): the tag's current reputation on a scale from 0 to 100.
                    [].sent (integer): the total number of messages sent with this tag
                    [].hard_bounces (integer): the total number of hard bounces by messages with this tag
                    [].soft_bounces (integer): the total number of soft bounces by messages with this tag
@@ -913,6 +914,7 @@ undo this operation, so use it carefully.
         Returns:
            struct.  the tag that was deleted::
                tag (string): the actual tag as a string
+               reputation (integer): the tag's current reputation on a scale from 0 to 100.
                sent (integer): the total number of messages sent with this tag
                hard_bounces (integer): the total number of hard bounces by messages with this tag
                soft_bounces (integer): the total number of soft bounces by messages with this tag
@@ -1097,7 +1099,7 @@ class Messages(object):
                        message.to[].name (string): the optional display name to use for the recipient
 
 
-               message.headers (struct): optional extra headers to add to the message (currently only Reply-To and X-* headers are allowed)
+               message.headers (struct): optional extra headers to add to the message (most headers are allowed)
                message.important (boolean): whether or not this message is important, and should be delivered ahead of non-important messages
                message.track_opens (boolean): whether or not to turn on open tracking for the message
                message.track_clicks (boolean): whether or not to turn on click tracking for the message
@@ -1196,7 +1198,7 @@ class Messages(object):
                        message.to[].name (string): the optional display name to use for the recipient
 
 
-               message.headers (struct): optional extra headers to add to the message (currently only Reply-To and X-* headers are allowed)
+               message.headers (struct): optional extra headers to add to the message (most headers are allowed)
                message.important (boolean): whether or not this message is important, and should be delivered ahead of non-important messages
                message.track_opens (boolean): whether or not to turn on open tracking for the message
                message.track_clicks (boolean): whether or not to turn on click tracking for the message
@@ -1328,6 +1330,40 @@ class Messages(object):
         _params = {'query': query, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders, 'limit': limit}
         return self.master.call('messages/search', _params)
 
+    def search_time_series(self, query='*', date_from=None, date_to=None, tags=None, senders=None):
+        """Search the content of recently sent messages and return the aggregated hourly stats for matching messages
+
+        Args:
+           query (string): the search terms to find matching messages for
+           date_from (string): start date
+           date_to (string): end date
+           tags (array): an array of tag names to narrow the search to, will return messages that contain ANY of the tags
+           senders (array): an array of sender addresses to narrow the search to, will return messages sent by ANY of the senders
+
+        Returns:
+           array.  the array of history information::
+               [] (struct): the stats for a single hour::
+                   [].time (string): the hour as a UTC date string in YYYY-MM-DD HH:MM:SS format
+                   [].sent (integer): the number of emails that were sent during the hour
+                   [].hard_bounces (integer): the number of emails that hard bounced during the hour
+                   [].soft_bounces (integer): the number of emails that soft bounced during the hour
+                   [].rejects (integer): the number of emails that were rejected during the hour
+                   [].complaints (integer): the number of spam complaints received during the hour
+                   [].unsubs (integer): the number of unsubscribes received during the hour
+                   [].opens (integer): the number of emails opened during the hour
+                   [].unique_opens (integer): the number of unique opens generated by messages sent during the hour
+                   [].clicks (integer): the number of tracked URLs clicked during the hour
+                   [].unique_clicks (integer): the number of unique clicks generated by messages sent during the hour
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           ServiceUnavailableError: The subsystem providing this API call is down for maintenance
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'query': query, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders}
+        return self.master.call('messages/search-time-series', _params)
+
     def info(self, id):
         """Get the information for a single recently sent message
 
@@ -1426,7 +1462,7 @@ class Messages(object):
            from_email (string|null): optionally define the sender address - otherwise we'll use the address found in the provided headers
            from_name (string|null): optionally define the sender alias
            to (array|null): optionally define the recipients to receive the message - otherwise we'll use the To, Cc, and Bcc headers provided in the document::
-               to[] (string): the email address of the recipint
+               to[] (string): the email address of the recipient
            async (boolean): enable a background sending mode that is optimized for bulk sending. In async mode, messages/sendRaw will immediately return a status of "queued" for every recipient. To handle rejections when sending in async mode, set up a webhook for the 'reject' event. Defaults to false for messages with no more than 10 recipients; messages with more than 10 recipients are always sent asynchronously, regardless of the value of async.
            ip_pool (string): the name of the dedicated ip pool that should be used to send the message. If you do not have any dedicated IPs, this parameter has no effect. If you specify a pool that does not exist, your default pool will be used instead.
            send_at (string): when this message should be sent as a UTC timestamp in YYYY-MM-DD HH:MM:SS format. If you specify a time in the past, the message will be sent immediately.
