@@ -108,7 +108,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.42'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.43'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1321,6 +1321,13 @@ class Messages(object):
                    [].state (string): sending status of this message: sent, bounced, rejected
                    [].metadata (struct): any custom metadata provided when the message was sent
 
+               smtp_events (array): a log of up to 3 smtp events for the message::
+                   smtp_events[] (struct): information about a specific smtp event::
+                       smtp_events[].ts (integer): the Unix timestamp when the event occured
+                       smtp_events[].type (string): the message's state as a result of this event
+                       smtp_events[].diag (string): the SMTP response from the recipient's server
+
+
 
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
@@ -1402,6 +1409,13 @@ class Messages(object):
 
                state (string): sending status of this message: sent, bounced, rejected
                metadata (struct): any custom metadata provided when the message was sent
+               smtp_events (array): a log of up to 3 smtp events for the message::
+                   smtp_events[] (struct): information about a specific smtp event::
+                       smtp_events[].ts (integer): the Unix timestamp when the event occured
+                       smtp_events[].type (string): the message's state as a result of this event
+                       smtp_events[].diag (string): the SMTP response from the recipient's server
+
+
 
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
