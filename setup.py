@@ -3,12 +3,12 @@ import os.path
 
 setup(
     name = 'mandrill',
-    version = '1.0.44',
+    version = '1.0.45',
     author = 'Mandrill Devs',
     author_email = 'community@mandrill.com',
     description = 'A CLI client and Python API library for the Mandrill email as a service platform.',
     long_description = open(os.path.join(os.path.dirname(__file__), 'README')).read(),
-    license = 'MIT',
+    license = 'Apache-2.0',
     keywords = 'mandrill email api',
     url = 'https://bitbucket.org/mailchimp/mandrill-api-python/',
     scripts = ['scripts/mandrill', 'scripts/sendmail.mandrill'],
@@ -19,7 +19,7 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache Software License',
         'Topic :: Communications :: Email'
     ]
 )
