@@ -112,7 +112,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.47'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.48'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -530,7 +530,7 @@ email, detail, created_at.
         _params = {'notify_email': notify_email}
         return self.master.call('exports/whitelist', _params)
 
-    def activity(self, notify_email=None, date_from=None, date_to=None, tags=None, senders=None, states=None):
+    def activity(self, notify_email=None, date_from=None, date_to=None, tags=None, senders=None, states=None, api_keys=None):
         """Begins an export of your activity history. The activity will be exported to a zip archive
 containing a single file named activity.csv in the same format as you would be able to export
 from your account's activity view. It includes the following fields: Date, Email Address,
@@ -547,6 +547,8 @@ metadata fields, they will be included in the exported data.
                senders[] (string): a sender address
            states (array): an array of states to narrow the export to; messages with ANY of the states will be included::
                states[] (string): a message state
+           api_keys (array): an array of api keys to narrow the export to; messsagse sent with ANY of the keys will be included::
+               api_keys[] (string): an API key associated with your account
 
         Returns:
            struct.  information about the activity export job that was started::
@@ -561,7 +563,7 @@ metadata fields, they will be included in the exported data.
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'notify_email': notify_email, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders, 'states': states}
+        _params = {'notify_email': notify_email, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders, 'states': states, 'api_keys': api_keys}
         return self.master.call('exports/activity', _params)
 
 
@@ -1112,6 +1114,7 @@ class Messages(object):
                message.inline_css (boolean): whether or not to automatically inline all CSS styles provided in the message HTML - only for HTML documents less than 256KB in size
                message.url_strip_qs (boolean): whether or not to strip the query string from URLs when aggregating tracked URL data
                message.preserve_recipients (boolean): whether or not to expose all recipients in to "To" header for each email
+               message.view_content_link (boolean): set to false to remove content logging for sensitive emails
                message.bcc_address (string): an optional address to receive an exact copy of each recipient's email
                message.tracking_domain (string): a custom domain to use for tracking opens and clicks instead of mandrillapp.com
                message.signing_domain (string): a custom domain to use for SPF/DKIM signing instead of mandrill (for "via" or "on behalf of" in email clients)
@@ -1214,6 +1217,7 @@ class Messages(object):
                message.inline_css (boolean): whether or not to automatically inline all CSS styles provided in the message HTML - only for HTML documents less than 256KB in size
                message.url_strip_qs (boolean): whether or not to strip the query string from URLs when aggregating tracked URL data
                message.preserve_recipients (boolean): whether or not to expose all recipients in to "To" header for each email
+               message.view_content_link (boolean): set to false to remove content logging for sensitive emails
                message.bcc_address (string): an optional address to receive an exact copy of each recipient's email
                message.tracking_domain (string): a custom domain to use for tracking opens and clicks instead of mandrillapp.com
                message.signing_domain (string): a custom domain to use for SPF/DKIM signing instead of mandrill (for "via" or "on behalf of" in email clients)
@@ -1286,7 +1290,7 @@ class Messages(object):
         _params = {'template_name': template_name, 'template_content': template_content, 'message': message, 'async': async, 'ip_pool': ip_pool, 'send_at': send_at}
         return self.master.call('messages/send-template', _params)
 
-    def search(self, query='*', date_from=None, date_to=None, tags=None, senders=None, limit=100):
+    def search(self, query='*', date_from=None, date_to=None, tags=None, senders=None, api_keys=None, limit=100):
         """Search the content of recently sent messages and optionally narrow by date range, tags and senders
 
         Args:
@@ -1295,6 +1299,7 @@ class Messages(object):
            date_to (string): end date
            tags (array): an array of tag names to narrow the search to, will return messages that contain ANY of the tags
            senders (array): an array of sender addresses to narrow the search to, will return messages sent by ANY of the senders
+           api_keys (array): an array of API keys to narrow the search to, will return messages sent by ANY of the keys
            limit (integer): the maximum number of results to return, defaults to 100, 1000 is the maximum
 
         Returns:
@@ -1344,7 +1349,7 @@ class Messages(object):
            ServiceUnavailableError: The subsystem providing this API call is down for maintenance
            Error: A general Mandrill error has occurred
         """
-        _params = {'query': query, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders, 'limit': limit}
+        _params = {'query': query, 'date_from': date_from, 'date_to': date_to, 'tags': tags, 'senders': senders, 'api_keys': api_keys, 'limit': limit}
         return self.master.call('messages/search', _params)
 
     def search_time_series(self, query='*', date_from=None, date_to=None, tags=None, senders=None):
@@ -1479,7 +1484,7 @@ class Messages(object):
         return self.master.call('messages/parse', _params)
 
     def send_raw(self, raw_message, from_email=None, from_name=None, to=None, async=False, ip_pool=None, send_at=None, return_path_domain=None):
-        """Take a raw MIME document for a message, and send it exactly as if it were sent over the SMTP protocol
+        """Take a raw MIME document for a message, and send it exactly as if it were sent through Mandrill's SMTP servers
 
         Args:
            raw_message (string): the full MIME document of an email message
@@ -2130,6 +2135,19 @@ class Senders(object):
                [] (struct): the information on each sending domain for the account::
                    [].domain (string): the sender domain name
                    [].created_at (string): the date and time that the sending domain was first seen as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].last_tested_at (string): when the domain's DNS settings were last tested as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].spf (struct): details about the domain's SPF record::
+                       [].spf.valid (boolean): whether the domain's SPF record is valid for use with Mandrill
+                       [].spf.valid_after (string): when the domain's SPF record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                       [].spf.error (string): an error describing the spf record, or null if the record is correct
+
+                   [].dkim (struct): details about the domain's DKIM record::
+                       [].dkim.valid (boolean): whether the domain's DKIM record is valid for use with Mandrill
+                       [].dkim.valid_after (string): when the domain's DKIM record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                       [].dkim.error (string): an error describing the DKIM record, or null if the record is correct
+
+                   [].verified_at (string): if the domain has been verified, this indicates when that verification occurred as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].valid_signing (boolean): whether this domain can be used to authenticate mail, either for itself or as a custom signing domain. If this is false but spf and dkim are both valid, you will need to verify the domain before using it to authenticate mail
 
 
         Raises:
@@ -2138,6 +2156,94 @@ class Senders(object):
         """
         _params = {}
         return self.master.call('senders/domains', _params)
+
+    def add_domain(self, domain):
+        """Adds a sender domain to your account. Sender domains are added automatically as you
+send, but you can use this call to add them ahead of time.
+
+        Args:
+           domain (string): a domain name
+
+        Returns:
+           struct.  information about the domain::
+               domain (string): the sender domain name
+               created_at (string): the date and time that the sending domain was first seen as a UTC string in YYYY-MM-DD HH:MM:SS format
+               last_tested_at (string): when the domain's DNS settings were last tested as a UTC string in YYYY-MM-DD HH:MM:SS format
+               spf (struct): details about the domain's SPF record::
+                   spf.valid (boolean): whether the domain's SPF record is valid for use with Mandrill
+                   spf.valid_after (string): when the domain's SPF record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                   spf.error (string): an error describing the spf record, or null if the record is correct
+
+               dkim (struct): details about the domain's DKIM record::
+                   dkim.valid (boolean): whether the domain's DKIM record is valid for use with Mandrill
+                   dkim.valid_after (string): when the domain's DKIM record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                   dkim.error (string): an error describing the DKIM record, or null if the record is correct
+
+               verified_at (string): if the domain has been verified, this indicates when that verification occurred as a UTC string in YYYY-MM-DD HH:MM:SS format
+               valid_signing (boolean): whether this domain can be used to authenticate mail, either for itself or as a custom signing domain. If this is false but spf and dkim are both valid, you will need to verify the domain before using it to authenticate mail
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('senders/add-domain', _params)
+
+    def check_domain(self, domain):
+        """Checks the SPF and DKIM settings for a domain. If you haven't already added this domain to your
+account, it will be added automatically.
+
+        Args:
+           domain (string): a domain name
+
+        Returns:
+           struct.  information about the sender domain::
+               domain (string): the sender domain name
+               created_at (string): the date and time that the sending domain was first seen as a UTC string in YYYY-MM-DD HH:MM:SS format
+               last_tested_at (string): when the domain's DNS settings were last tested as a UTC string in YYYY-MM-DD HH:MM:SS format
+               spf (struct): details about the domain's SPF record::
+                   spf.valid (boolean): whether the domain's SPF record is valid for use with Mandrill
+                   spf.valid_after (string): when the domain's SPF record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                   spf.error (string): an error describing the spf record, or null if the record is correct
+
+               dkim (struct): details about the domain's DKIM record::
+                   dkim.valid (boolean): whether the domain's DKIM record is valid for use with Mandrill
+                   dkim.valid_after (string): when the domain's DKIM record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                   dkim.error (string): an error describing the DKIM record, or null if the record is correct
+
+               verified_at (string): if the domain has been verified, this indicates when that verification occurred as a UTC string in YYYY-MM-DD HH:MM:SS format
+               valid_signing (boolean): whether this domain can be used to authenticate mail, either for itself or as a custom signing domain. If this is false but spf and dkim are both valid, you will need to verify the domain before using it to authenticate mail
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('senders/check-domain', _params)
+
+    def verify_domain(self, domain, mailbox):
+        """Sends a verification email in order to verify ownership of a domain.
+Domain verification is an optional step to confirm ownership of a domain. Once a
+domain has been verified in a Mandrill account, other accounts may not have their
+messages signed by that domain unless they also verify the domain. This prevents
+other Mandrill accounts from sending mail signed by your domain.
+
+        Args:
+           domain (string): a domain name at which you can receive email
+           mailbox (string): a mailbox at the domain where the verification email should be sent
+
+        Returns:
+           struct.  information about the verification that was sent::
+               status (string): "sent" indicates that the verification has been sent, "already_verified" indicates that the domain has already been verified with your account
+               domain (string): the domain name you provided
+               email (string): the email address the verification email was sent to
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain, 'mailbox': mailbox}
+        return self.master.call('senders/verify-domain', _params)
 
     def info(self, address):
         """Return more detailed information about a single sender, including aggregates of recent stats
