@@ -39,6 +39,18 @@ class UnknownInboundDomainError(Error):
     pass
 class UnknownExportError(Error):
     pass
+class IPProvisionLimitError(Error):
+    pass
+class UnknownPoolError(Error):
+    pass
+class UnknownIPError(Error):
+    pass
+class InvalidEmptyDefaultPoolError(Error):
+    pass
+class InvalidDeleteDefaultPoolError(Error):
+    pass
+class InvalidDeleteNonEmptyPoolError(Error):
+    pass
 
 ROOT = 'https://mandrillapp.com/api/1.0/'
 ERROR_MAP = {
@@ -56,7 +68,13 @@ ERROR_MAP = {
     'Invalid_Template': InvalidTemplateError,
     'Unknown_Webhook': UnknownWebhookError,
     'Unknown_InboundDomain': UnknownInboundDomainError,
-    'Unknown_Export': UnknownExportError
+    'Unknown_Export': UnknownExportError,
+    'IP_ProvisionLimit': IPProvisionLimitError,
+    'Unknown_Pool': UnknownPoolError,
+    'Unknown_IP': UnknownIPError,
+    'Invalid_EmptyDefaultPool': InvalidEmptyDefaultPoolError,
+    'Invalid_DeleteDefaultPool': InvalidDeleteDefaultPoolError,
+    'Invalid_DeleteNonEmptyPool': InvalidDeleteNonEmptyPoolError
 }
 
 logger = logging.getLogger('mandrill')
@@ -99,6 +117,7 @@ class Mandrill(object):
         self.tags = Tags(self)
         self.messages = Messages(self)
         self.whitelists = Whitelists(self)
+        self.ips = Ips(self)
         self.internal = Internal(self)
         self.subaccounts = Subaccounts(self)
         self.urls = Urls(self)
@@ -112,7 +131,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.48'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.49'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1651,6 +1670,341 @@ address or search prefix to limit the results. Returns up to 1000 results.
         """
         _params = {'email': email}
         return self.master.call('whitelists/delete', _params)
+
+
+class Ips(object):
+    def __init__(self, master):
+        self.master = master
+
+    def list(self, ):
+        """Lists your dedicated IPs.
+
+        Returns:
+           array.  an array of structs for each dedicated IP::
+               [] (struct): information about a single dedicated IP::
+                   [].ip (string): the ip address
+                   [].created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].pool (string): the name of the pool that this dedicated IP belongs to
+                   [].domain (string): the domain name (reverse dns) of this dedicated IP
+                   [].custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                       [].custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                       [].custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                       [].custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+                   [].warmup (struct): information about the ip's warmup status::
+                       [].warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                       [].warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                       [].warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {}
+        return self.master.call('ips/list', _params)
+
+    def info(self, ip):
+        """Retrieves information about a single dedicated ip.
+
+        Args:
+           ip (string): a dedicated IP address
+
+        Returns:
+           struct.  Information about the dedicated ip::
+               ip (string): the ip address
+               created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               pool (string): the name of the pool that this dedicated IP belongs to
+               domain (string): the domain name (reverse dns) of this dedicated IP
+               custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                   custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                   custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                   custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+               warmup (struct): information about the ip's warmup status::
+                   warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                   warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'ip': ip}
+        return self.master.call('ips/info', _params)
+
+    def provision(self, warmup=False, pool=None):
+        """Requests an additional dedicated IP for your account. Accounts may
+have one outstanding request at any time, and provisioning requests
+are processed within 24 hours.
+
+        Args:
+           warmup (boolean): whether to enable warmup mode for the ip
+           pool (string): the id of the pool to add the dedicated ip to, or null to use your account's default pool
+
+        Returns:
+           struct.  a description of the provisioning request that was created::
+               requested_at (string): the date and time that the request was created as a UTC timestamp in YYYY-MM-DD HH:MM:SS format
+
+        Raises:
+           IPProvisionLimitError: A dedicated IP cannot be provisioned while another request is pending.
+           UnknownPoolError: The provided dedicated IP pool does not exist.
+           PaymentRequiredError: The requested feature requires payment.
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'warmup': warmup, 'pool': pool}
+        return self.master.call('ips/provision', _params)
+
+    def start_warmup(self, ip):
+        """Begins the warmup process for a dedicated IP. During the warmup process,
+Mandrill will gradually increase the percentage of your mail that is sent over
+the warming-up IP, over a period of roughly 30 days. The rest of your mail
+will be sent over shared IPs or other dedicated IPs in the same pool.
+
+        Args:
+           ip (string): a dedicated ip address
+
+        Returns:
+           struct.  Information about the dedicated IP::
+               ip (string): the ip address
+               created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               pool (string): the name of the pool that this dedicated IP belongs to
+               domain (string): the domain name (reverse dns) of this dedicated IP
+               custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                   custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                   custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                   custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+               warmup (struct): information about the ip's warmup status::
+                   warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                   warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+        Raises:
+           UnknownIPError: The provided dedicated IP does not exist.
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'ip': ip}
+        return self.master.call('ips/start-warmup', _params)
+
+    def cancel_warmup(self, ip):
+        """Cancels the warmup process for a dedicated IP.
+
+        Args:
+           ip (string): a dedicated ip address
+
+        Returns:
+           struct.  Information about the dedicated IP::
+               ip (string): the ip address
+               created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               pool (string): the name of the pool that this dedicated IP belongs to
+               domain (string): the domain name (reverse dns) of this dedicated IP
+               custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                   custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                   custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                   custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+               warmup (struct): information about the ip's warmup status::
+                   warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                   warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+        Raises:
+           UnknownIPError: The provided dedicated IP does not exist.
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'ip': ip}
+        return self.master.call('ips/cancel-warmup', _params)
+
+    def set_pool(self, ip, pool, create_pool=False):
+        """Moves a dedicated IP to a different pool.
+
+        Args:
+           ip (string): a dedicated ip address
+           pool (string): the name of the new pool to add the dedicated ip to
+           create_pool (boolean): whether to create the pool if it does not exist; if false and the pool does not exist, an Unknown_Pool will be thrown.
+
+        Returns:
+           struct.  Information about the updated state of the dedicated IP::
+               ip (string): the ip address
+               created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               pool (string): the name of the pool that this dedicated IP belongs to
+               domain (string): the domain name (reverse dns) of this dedicated IP
+               custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                   custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                   custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                   custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+               warmup (struct): information about the ip's warmup status::
+                   warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                   warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+        Raises:
+           UnknownIPError: The provided dedicated IP does not exist.
+           UnknownPoolError: The provided dedicated IP pool does not exist.
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           InvalidEmptyDefaultPoolError: You cannot remove the last IP from your default IP pool.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'ip': ip, 'pool': pool, 'create_pool': create_pool}
+        return self.master.call('ips/set-pool', _params)
+
+    def delete(self, ip):
+        """Deletes a dedicated IP. This is permanent and cannot be undone.
+
+        Args:
+           ip (string): the dedicated ip to remove from your account
+
+        Returns:
+           struct.  a description of the ip that was removed from your account.::
+               ip (string): the ip address
+               deleted (string): a boolean indicating whether the ip was successfully deleted
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'ip': ip}
+        return self.master.call('ips/delete', _params)
+
+    def list_pools(self, ):
+        """Lists your dedicated IP pools.
+
+        Returns:
+           array.  the dedicated IP pools for your account, up to a maximum of 1,000::
+               [] (struct): information about each dedicated IP pool::
+                   [].name (string): this pool's name
+                   [].created_at (string): the date and time that this pool was created as a UTC timestamp in YYYY-MM-DD HH:MM:SS format
+                   [].ips (array): the dedicated IPs in this pool::
+                       [].ips[] (struct): information about each dedicated IP::
+                           [].ips[].ip (string): the ip address
+                           [].ips[].created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+                           [].ips[].pool (string): the name of the pool that this dedicated IP belongs to
+                           [].ips[].domain (string): the domain name (reverse dns) of this dedicated IP
+                           [].ips[].custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                               [].ips[].custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                               [].ips[].custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                               [].ips[].custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+                           [].ips[].warmup (struct): information about the ip's warmup status::
+                               [].ips[].warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                               [].ips[].warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                               [].ips[].warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {}
+        return self.master.call('ips/list-pools', _params)
+
+    def pool_info(self, pool):
+        """Describes a single dedicated IP pool.
+
+        Args:
+           pool (string): a pool name
+
+        Returns:
+           struct.  Information about the dedicated ip pool::
+               name (string): this pool's name
+               created_at (string): the date and time that this pool was created as a UTC timestamp in YYYY-MM-DD HH:MM:SS format
+               ips (array): the dedicated IPs in this pool::
+                   ips[] (struct): information about each dedicated IP::
+                       ips[].ip (string): the ip address
+                       ips[].created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+                       ips[].pool (string): the name of the pool that this dedicated IP belongs to
+                       ips[].domain (string): the domain name (reverse dns) of this dedicated IP
+                       ips[].custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                           ips[].custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                           ips[].custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                           ips[].custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+                       ips[].warmup (struct): information about the ip's warmup status::
+                           ips[].warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                           ips[].warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                           ips[].warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+
+
+        Raises:
+           UnknownPoolError: The provided dedicated IP pool does not exist.
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'pool': pool}
+        return self.master.call('ips/pool-info', _params)
+
+    def create_pool(self, pool):
+        """Creates a pool and returns it. If a pool already exists with this
+name, no action will be performed.
+
+        Args:
+           pool (string): the name of a pool to create
+
+        Returns:
+           struct.  Information about the dedicated ip pool::
+               name (string): this pool's name
+               created_at (string): the date and time that this pool was created as a UTC timestamp in YYYY-MM-DD HH:MM:SS format
+               ips (array): the dedicated IPs in this pool::
+                   ips[] (struct): information about each dedicated IP::
+                       ips[].ip (string): the ip address
+                       ips[].created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+                       ips[].pool (string): the name of the pool that this dedicated IP belongs to
+                       ips[].domain (string): the domain name (reverse dns) of this dedicated IP
+                       ips[].custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                           ips[].custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                           ips[].custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                           ips[].custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+                       ips[].warmup (struct): information about the ip's warmup status::
+                           ips[].warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                           ips[].warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                           ips[].warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'pool': pool}
+        return self.master.call('ips/create-pool', _params)
+
+    def delete_pool(self, pool):
+        """Deletes a pool. A pool must be empty before you can delete it, and you cannot delete your default pool.
+
+        Args:
+           pool (string): the name of the pool to delete
+
+        Returns:
+           struct.  information about the status of the pool that was deleted::
+               pool (string): the name of the pool
+               deleted (boolean): whether the pool was deleted
+
+        Raises:
+           UnknownPoolError: The provided dedicated IP pool does not exist.
+           InvalidDeleteDefaultPoolError: The default pool cannot be deleted.
+           InvalidDeleteNonEmptyPoolError: Non-empty pools cannot be deleted.
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'pool': pool}
+        return self.master.call('ips/delete-pool', _params)
 
 
 class Internal(object):
