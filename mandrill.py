@@ -131,7 +131,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.50'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.51'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -2006,14 +2006,67 @@ name, no action will be performed.
                deleted (boolean): whether the pool was deleted
 
         Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
            UnknownPoolError: The provided dedicated IP pool does not exist.
            InvalidDeleteDefaultPoolError: The default pool cannot be deleted.
            InvalidDeleteNonEmptyPoolError: Non-empty pools cannot be deleted.
-           InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
         _params = {'pool': pool}
         return self.master.call('ips/delete-pool', _params)
+
+    def check_custom_dns(self, ip, domain):
+        """Tests whether a domain name is valid for use as the custom reverse
+DNS for a dedicated IP.
+
+        Args:
+           ip (string): a dedicated ip address
+           domain (string): the domain name to test
+
+        Returns:
+           struct.  validation results for the domain::
+               valid (string): whether the domain name has a correctly-configured A record pointing to the ip address
+               error (string): if valid is false, this will contain details about why the domain's A record is incorrect
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownIPError: The provided dedicated IP does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'ip': ip, 'domain': domain}
+        return self.master.call('ips/check-custom-dns', _params)
+
+    def set_custom_dns(self, ip, domain):
+        """Configures the custom DNS name for a dedicated IP.
+
+        Args:
+           ip (string): a dedicated ip address
+           domain (string): a domain name to set as the dedicated IP's custom dns name.
+
+        Returns:
+           struct.  information about the dedicated IP's new configuration::
+               ip (string): the ip address
+               created_at (string): the date and time that the dedicated IP was created as a UTC string in YYYY-MM-DD HH:MM:SS format
+               pool (string): the name of the pool that this dedicated IP belongs to
+               domain (string): the domain name (reverse dns) of this dedicated IP
+               custom_dns (struct): information about the ip's custom dns, if it has been configured::
+                   custom_dns.enabled (boolean): a boolean indicating whether custom dns has been configured for this ip
+                   custom_dns.valid (boolean): whether the ip's custom dns is currently valid
+                   custom_dns.error (string): if the ip's custom dns is invalid, this will include details about the error
+
+               warmup (struct): information about the ip's warmup status::
+                   warmup.warming_up (boolean): whether the ip is currently in warmup mode
+                   warmup.start_at (string): the start time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   warmup.end_at (string): the end date and time for the warmup process as a UTC string in YYYY-MM-DD HH:MM:SS format
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownIPError: The provided dedicated IP does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'ip': ip, 'domain': domain}
+        return self.master.call('ips/set-custom-dns', _params)
 
 
 class Internal(object):
