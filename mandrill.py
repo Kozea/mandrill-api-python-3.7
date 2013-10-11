@@ -31,11 +31,15 @@ class UnknownSenderError(Error):
     pass
 class UnknownUrlError(Error):
     pass
+class UnknownTrackingDomainError(Error):
+    pass
 class InvalidTemplateError(Error):
     pass
 class UnknownWebhookError(Error):
     pass
 class UnknownInboundDomainError(Error):
+    pass
+class UnknownInboundRouteError(Error):
     pass
 class UnknownExportError(Error):
     pass
@@ -65,9 +69,11 @@ ERROR_MAP = {
     'Invalid_Reject': InvalidRejectError,
     'Unknown_Sender': UnknownSenderError,
     'Unknown_Url': UnknownUrlError,
+    'Unknown_TrackingDomain': UnknownTrackingDomainError,
     'Invalid_Template': InvalidTemplateError,
     'Unknown_Webhook': UnknownWebhookError,
     'Unknown_InboundDomain': UnknownInboundDomainError,
+    'Unknown_InboundRoute': UnknownInboundRouteError,
     'Unknown_Export': UnknownExportError,
     'IP_ProvisionLimit': IPProvisionLimitError,
     'Unknown_Pool': UnknownPoolError,
@@ -131,7 +137,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.51'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.52'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -183,7 +189,7 @@ class Templates(object):
     def __init__(self, master):
         self.master = master
 
-    def add(self, name, from_email=None, from_name=None, subject=None, code=None, text=None, publish=True):
+    def add(self, name, from_email=None, from_name=None, subject=None, code=None, text=None, publish=True, labels=[]):
         """Add a new template
 
         Args:
@@ -194,11 +200,16 @@ class Templates(object):
            code (string): the HTML code for the template with mc:edit attributes for the editable elements
            text (string): a default text part to be used when sending with this template
            publish (boolean): set to false to add a draft template without publishing
+           labels (array): an optional array of up to 10 labels to use for filtering templates::
+               labels[] (string): a single label
 
         Returns:
            struct.  the information saved about the new template::
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
+               labels (array): the list of labels applied to the template::
+                   labels[] (string): a single label
+
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
                subject (string): the subject line of the template, if provided - draft version
                from_email (string): the default sender address for the template, if provided - draft version
@@ -219,7 +230,7 @@ class Templates(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'name': name, 'from_email': from_email, 'from_name': from_name, 'subject': subject, 'code': code, 'text': text, 'publish': publish}
+        _params = {'name': name, 'from_email': from_email, 'from_name': from_name, 'subject': subject, 'code': code, 'text': text, 'publish': publish, 'labels': labels}
         return self.master.call('templates/add', _params)
 
     def info(self, name):
@@ -232,6 +243,9 @@ class Templates(object):
            struct.  the requested template information::
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
+               labels (array): the list of labels applied to the template::
+                   labels[] (string): a single label
+
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
                subject (string): the subject line of the template, if provided - draft version
                from_email (string): the default sender address for the template, if provided - draft version
@@ -255,7 +269,7 @@ class Templates(object):
         _params = {'name': name}
         return self.master.call('templates/info', _params)
 
-    def update(self, name, from_email=None, from_name=None, subject=None, code=None, text=None, publish=True):
+    def update(self, name, from_email=None, from_name=None, subject=None, code=None, text=None, publish=True, labels=None):
         """Update the code for an existing template. If null is provided for any fields, the values will remain unchanged.
 
         Args:
@@ -266,11 +280,16 @@ class Templates(object):
            code (string): the new code for the template
            text (string): the new default text part to be used
            publish (boolean): set to false to update the draft version of the template without publishing
+           labels (array): an optional array of up to 10 labels to use for filtering templates::
+               labels[] (string): a single label
 
         Returns:
            struct.  the template that was updated::
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
+               labels (array): the list of labels applied to the template::
+                   labels[] (string): a single label
+
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
                subject (string): the subject line of the template, if provided - draft version
                from_email (string): the default sender address for the template, if provided - draft version
@@ -291,7 +310,7 @@ class Templates(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'name': name, 'from_email': from_email, 'from_name': from_name, 'subject': subject, 'code': code, 'text': text, 'publish': publish}
+        _params = {'name': name, 'from_email': from_email, 'from_name': from_name, 'subject': subject, 'code': code, 'text': text, 'publish': publish, 'labels': labels}
         return self.master.call('templates/update', _params)
 
     def publish(self, name):
@@ -304,6 +323,9 @@ class Templates(object):
            struct.  the template that was published::
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
+               labels (array): the list of labels applied to the template::
+                   labels[] (string): a single label
+
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
                subject (string): the subject line of the template, if provided - draft version
                from_email (string): the default sender address for the template, if provided - draft version
@@ -337,6 +359,9 @@ class Templates(object):
            struct.  the template that was deleted::
                slug (string): the immutable unique code name of the template
                name (string): the name of the template
+               labels (array): the list of labels applied to the template::
+                   labels[] (string): a single label
+
                code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
                subject (string): the subject line of the template, if provided - draft version
                from_email (string): the default sender address for the template, if provided - draft version
@@ -360,14 +385,20 @@ class Templates(object):
         _params = {'name': name}
         return self.master.call('templates/delete', _params)
 
-    def list(self, ):
+    def list(self, label=None):
         """Return a list of all the templates available to this user
+
+        Args:
+           label (string): an optional label to filter the templates
 
         Returns:
            array.  an array of structs with information about each template::
                [] (struct): the information on each template in the account::
                    [].slug (string): the immutable unique code name of the template
                    [].name (string): the name of the template
+                   [].labels (array): the list of labels applied to the template::
+                       [].labels[] (string): a single label
+
                    [].code (string): the full HTML code of the template, with mc:edit attributes marking the editable elements - draft version
                    [].subject (string): the subject line of the template, if provided - draft version
                    [].from_email (string): the default sender address for the template, if provided - draft version
@@ -388,7 +419,7 @@ class Templates(object):
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {}
+        _params = {'label': label}
         return self.master.call('templates/list', _params)
 
     def time_series(self, name):
@@ -858,6 +889,65 @@ class Inbound(object):
         _params = {}
         return self.master.call('inbound/domains', _params)
 
+    def add_domain(self, domain):
+        """Add an inbound domain to your account
+
+        Args:
+           domain (string): a domain name
+
+        Returns:
+           struct.  information about the domain::
+               domain (string): the domain name that is accepting mail
+               created_at (string): the date and time that the inbound domain was added as a UTC string in YYYY-MM-DD HH:MM:SS format
+               valid_mx (boolean): true if this inbound domain has successfully set up an MX record to deliver mail to the Mandrill servers
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('inbound/add-domain', _params)
+
+    def check_domain(self, domain):
+        """Check the MX settings for an inbound domain. The domain must have already been added with the add-domain call
+
+        Args:
+           domain (string): an existing inbound domain
+
+        Returns:
+           struct.  information about the inbound domain::
+               domain (string): the domain name that is accepting mail
+               created_at (string): the date and time that the inbound domain was added as a UTC string in YYYY-MM-DD HH:MM:SS format
+               valid_mx (boolean): true if this inbound domain has successfully set up an MX record to deliver mail to the Mandrill servers
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownInboundDomainError: The requested inbound domain does not exist
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('inbound/check-domain', _params)
+
+    def delete_domain(self, domain):
+        """Delete an inbound domain from the account. All mail will stop routing for this domain immediately.
+
+        Args:
+           domain (string): an existing inbound domain
+
+        Returns:
+           struct.  information about the deleted domain::
+               domain (string): the domain name that is accepting mail
+               created_at (string): the date and time that the inbound domain was added as a UTC string in YYYY-MM-DD HH:MM:SS format
+               valid_mx (boolean): true if this inbound domain has successfully set up an MX record to deliver mail to the Mandrill servers
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownInboundDomainError: The requested inbound domain does not exist
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('inbound/delete-domain', _params)
+
     def routes(self, domain):
         """List the mailbox routes defined for an inbound domain
 
@@ -867,6 +957,7 @@ class Inbound(object):
         Returns:
            array.  the routes associated with the domain::
                [] (struct): the individual mailbox route::
+                   [].id (string): the unique identifier of the route
                    [].pattern (string): the search pattern that the mailbox name should match
                    [].url (string): the webhook URL where inbound messages will be published
 
@@ -878,6 +969,70 @@ class Inbound(object):
         """
         _params = {'domain': domain}
         return self.master.call('inbound/routes', _params)
+
+    def add_route(self, domain, pattern, url):
+        """Add a new mailbox route to an inbound domain
+
+        Args:
+           domain (string): an existing inbound domain
+           pattern (string): the search pattern that the mailbox name should match
+           url (string): the webhook URL where the inbound messages will be published
+
+        Returns:
+           struct.  the added mailbox route information::
+               id (string): the unique identifier of the route
+               pattern (string): the search pattern that the mailbox name should match
+               url (string): the webhook URL where inbound messages will be published
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownInboundDomainError: The requested inbound domain does not exist
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain, 'pattern': pattern, 'url': url}
+        return self.master.call('inbound/add-route', _params)
+
+    def update_route(self, id, pattern=None, url=None):
+        """Update the pattern or webhook of an existing inbound mailbox route. If null is provided for any fields, the values will remain unchanged.
+
+        Args:
+           id (string): the unique identifier of an existing mailbox route
+           pattern (string): the search pattern that the mailbox name should match
+           url (string): the webhook URL where the inbound messages will be published
+
+        Returns:
+           struct.  the updated mailbox route information::
+               id (string): the unique identifier of the route
+               pattern (string): the search pattern that the mailbox name should match
+               url (string): the webhook URL where inbound messages will be published
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownInboundRouteError: The provided inbound route does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'id': id, 'pattern': pattern, 'url': url}
+        return self.master.call('inbound/update-route', _params)
+
+    def delete_route(self, id):
+        """Delete an existing inbound mailbox route
+
+        Args:
+           id (string): the unique identifier of an existing route
+
+        Returns:
+           struct.  the deleted mailbox route information::
+               id (string): the unique identifier of the route
+               pattern (string): the search pattern that the mailbox name should match
+               url (string): the webhook URL where inbound messages will be published
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownInboundRouteError: The provided inbound route does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'id': id}
+        return self.master.call('inbound/delete-route', _params)
 
     def send_raw(self, raw_message, to=None, mail_from=None, helo=None, client_address=None):
         """Take a raw MIME document destined for a domain with inbound domains set up, and send it to the inbound hook exactly as if it had been sent over SMTP
@@ -2356,6 +2511,81 @@ class Urls(object):
         """
         _params = {'url': url}
         return self.master.call('urls/time-series', _params)
+
+    def tracking_domains(self, ):
+        """Get the list of tracking domains set up for this account
+
+        Returns:
+           array.  the tracking domains and their status::
+               [] (struct): the individual tracking domain::
+                   [].domain (string): the tracking domain name
+                   [].created_at (string): the date and time that the tracking domain was added as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].last_tested_at (string): when the domain's DNS settings were last tested as a UTC string in YYYY-MM-DD HH:MM:SS format
+                   [].cname (struct): details about the domain's CNAME record::
+                       [].cname.valid (boolean): whether the domain's CNAME record is valid for use with Mandrill
+                       [].cname.valid_after (string): when the domain's CNAME record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                       [].cname.error (string): an error describing the CNAME record, or null if the record is correct
+
+                   [].valid_tracking (boolean): whether this domain can be used as a tracking domain for email.
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {}
+        return self.master.call('urls/tracking-domains', _params)
+
+    def add_tracking_domain(self, domain):
+        """Add a tracking domain to your account
+
+        Args:
+           domain (string): a domain name
+
+        Returns:
+           struct.  information about the domain::
+               domain (string): the tracking domain name
+               created_at (string): the date and time that the tracking domain was added as a UTC string in YYYY-MM-DD HH:MM:SS format
+               last_tested_at (string): when the domain's DNS settings were last tested as a UTC string in YYYY-MM-DD HH:MM:SS format
+               cname (struct): details about the domain's CNAME record::
+                   cname.valid (boolean): whether the domain's CNAME record is valid for use with Mandrill
+                   cname.valid_after (string): when the domain's CNAME record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                   cname.error (string): an error describing the CNAME record, or null if the record is correct
+
+               valid_tracking (boolean): whether this domain can be used as a tracking domain for email.
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('urls/add-tracking-domain', _params)
+
+    def check_tracking_domain(self, domain):
+        """Checks the CNAME settings for a tracking domain. The domain must have been added already with the add-tracking-domain call
+
+        Args:
+           domain (string): an existing tracking domain name
+
+        Returns:
+           struct.  information about the tracking domain::
+               domain (string): the tracking domain name
+               created_at (string): the date and time that the tracking domain was added as a UTC string in YYYY-MM-DD HH:MM:SS format
+               last_tested_at (string): when the domain's DNS settings were last tested as a UTC string in YYYY-MM-DD HH:MM:SS format
+               cname (struct): details about the domain's CNAME record::
+                   cname.valid (boolean): whether the domain's CNAME record is valid for use with Mandrill
+                   cname.valid_after (string): when the domain's CNAME record will be considered valid for use with Mandrill as a UTC string in YYYY-MM-DD HH:MM:SS format. If set, this indicates that the record is valid now, but was previously invalid, and Mandrill will wait until the record's TTL elapses to start using it.
+                   cname.error (string): an error describing the CNAME record, or null if the record is correct
+
+               valid_tracking (boolean): whether this domain can be used as a tracking domain for email.
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownTrackingDomainError: The provided tracking domain does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'domain': domain}
+        return self.master.call('urls/check-tracking-domain', _params)
 
 
 class Webhooks(object):
