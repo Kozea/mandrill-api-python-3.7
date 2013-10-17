@@ -137,7 +137,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.52'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.53'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1286,6 +1286,7 @@ class Messages(object):
                    message.to[] (struct): a single recipient's information.::
                        message.to[].email (string): the email address of the recipient
                        message.to[].name (string): the optional display name to use for the recipient
+                       message.to[].type (string): the header type to use for the recipient, defaults to "to" if not provided
 
 
                message.headers (struct): optional extra headers to add to the message (most headers are allowed)
@@ -1389,6 +1390,7 @@ class Messages(object):
                    message.to[] (struct): a single recipient's information.::
                        message.to[].email (string): the email address of the recipient
                        message.to[].name (string): the optional display name to use for the recipient
+                       message.to[].type (string): the header type to use for the recipient, defaults to "to" if not provided
 
 
                message.headers (struct): optional extra headers to add to the message (most headers are allowed)
@@ -1492,7 +1494,7 @@ class Messages(object):
                    []._id (string): the message's unique id
                    [].sender (string): the email address of the sender
                    [].template (string): the unique name of the template used, if any
-                   [].subject (string): the message's subject link
+                   [].subject (string): the message's subject line
                    [].email (string): the recipient email address
                    [].tags (array): list of tags on this message::
                        [].tags[] (string): individual tag on this message
@@ -1581,7 +1583,7 @@ class Messages(object):
                _id (string): the message's unique id
                sender (string): the email address of the sender
                template (string): the unique name of the template used, if any
-               subject (string): the message's subject link
+               subject (string): the message's subject line
                email (string): the recipient email address
                tags (array): list of tags on this message::
                    tags[] (string): individual tag on this message
@@ -1622,6 +1624,45 @@ class Messages(object):
         """
         _params = {'id': id}
         return self.master.call('messages/info', _params)
+
+    def content(self, id):
+        """Get the full content of a recently sent message
+
+        Args:
+           id (string): the unique id of the message to get - passed as the "_id" field in webhooks, send calls, or search calls
+
+        Returns:
+           struct.  the content of the message::
+               ts (integer): the Unix timestamp from when this message was sent
+               _id (string): the message's unique id
+               from_email (string): the email address of the sender
+               from_name (string): the alias of the sender (if any)
+               subject (string): the message's subject line
+               to (struct): the message recipient's information::
+                   to.email (string): the email address of the recipient
+                   to.name (string): the alias of the recipient (if any)
+
+               tags (array): list of tags on this message::
+                   tags[] (string): individual tag on this message
+
+               headers (struct): the key-value pairs of the custom MIME headers for the message's main document
+               text (string): the text part of the message, if any
+               html (string): the HTML part of the message, if any
+               attachments (array): an array of any attachments that can be found in the message::
+                   attachments[] (struct): information about an individual attachment::
+                       attachments[].name (string): the file name of the attachment
+                       attachments[].type (string): the MIME type of the attachment
+                       attachments[].content (string): the content of the attachment as a base64 encoded string
+
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownMessageError: The provided message id does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'id': id}
+        return self.master.call('messages/content', _params)
 
     def parse(self, raw_message):
         """Parse the full MIME document for an email message, returning the content of the message broken into its constituent pieces
