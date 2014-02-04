@@ -55,6 +55,10 @@ class InvalidDeleteDefaultPoolError(Error):
     pass
 class InvalidDeleteNonEmptyPoolError(Error):
     pass
+class MetadataFieldLimitError(Error):
+    pass
+class UnknownMetadataFieldError(Error):
+    pass
 
 ROOT = 'https://mandrillapp.com/api/1.0/'
 ERROR_MAP = {
@@ -80,7 +84,9 @@ ERROR_MAP = {
     'Unknown_IP': UnknownIPError,
     'Invalid_EmptyDefaultPool': InvalidEmptyDefaultPoolError,
     'Invalid_DeleteDefaultPool': InvalidDeleteDefaultPoolError,
-    'Invalid_DeleteNonEmptyPool': InvalidDeleteNonEmptyPoolError
+    'Invalid_DeleteNonEmptyPool': InvalidDeleteNonEmptyPoolError,
+    'Metadata_FieldLimit': MetadataFieldLimitError,
+    'Unknown_MetadataField': UnknownMetadataFieldError
 }
 
 logger = logging.getLogger('mandrill')
@@ -129,6 +135,7 @@ class Mandrill(object):
         self.urls = Urls(self)
         self.webhooks = Webhooks(self)
         self.senders = Senders(self)
+        self.metadata = Metadata(self)
 
     def call(self, url, params=None):
         '''Actually make the API call with the given params - this should only be called by the namespace methods - use the helpers in regular usage like m.tags.list()'''
@@ -137,7 +144,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.53'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.54'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -3049,6 +3056,91 @@ other Mandrill accounts from sending mail signed by your domain.
         """
         _params = {'address': address}
         return self.master.call('senders/time-series', _params)
+
+
+class Metadata(object):
+    def __init__(self, master):
+        self.master = master
+
+    def list(self, ):
+        """Get the list of custom metadata fields indexed for the account.
+
+        Returns:
+           array.  the custom metadata fields for the account::
+               [] (struct): the individual custom metadata field info::
+                   [].name (string): the unique identifier of the metadata field to update
+                   [].state (string): the current state of the metadata field, one of "active", "delete", or "index"
+                   [].view_template (string): Mustache template to control how the metadata is rendered in your activity log
+
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           Error: A general Mandrill error has occurred
+        """
+        _params = {}
+        return self.master.call('metadata/list', _params)
+
+    def add(self, name, view_template=None):
+        """Add a new custom metadata field to be indexed for the account.
+
+        Args:
+           name (string): a unique identifier for the metadata field
+           view_template (string): optional Mustache template to control how the metadata is rendered in your activity log
+
+        Returns:
+           struct.  the information saved about the new metadata field::
+               name (string): the unique identifier of the metadata field to update
+               state (string): the current state of the metadata field, one of "active", "delete", or "index"
+               view_template (string): Mustache template to control how the metadata is rendered in your activity log
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           MetadataFieldLimitError: Custom metadata field limit reached.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'name': name, 'view_template': view_template}
+        return self.master.call('metadata/add', _params)
+
+    def update(self, name, view_template):
+        """Update an existing custom metadata field.
+
+        Args:
+           name (string): the unique identifier of the metadata field to update
+           view_template (string): optional Mustache template to control how the metadata is rendered in your activity log
+
+        Returns:
+           struct.  the information for the updated metadata field::
+               name (string): the unique identifier of the metadata field to update
+               state (string): the current state of the metadata field, one of "active", "delete", or "index"
+               view_template (string): Mustache template to control how the metadata is rendered in your activity log
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownMetadataFieldError: The provided metadata field name does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'name': name, 'view_template': view_template}
+        return self.master.call('metadata/update', _params)
+
+    def delete(self, name):
+        """Delete an existing custom metadata field. Deletion isn't instataneous, and /metadata/list will continue to return the field until the asynchronous deletion process is complete.
+
+        Args:
+           name (string): the unique identifier of the metadata field to update
+
+        Returns:
+           struct.  the information for the deleted metadata field::
+               name (string): the unique identifier of the metadata field to update
+               state (string): the current state of the metadata field, one of "active", "delete", or "index"
+               view_template (string): Mustache template to control how the metadata is rendered in your activity log
+
+        Raises:
+           InvalidKeyError: The provided API key is not a valid Mandrill API key
+           UnknownMetadataFieldError: The provided metadata field name does not exist.
+           Error: A general Mandrill error has occurred
+        """
+        _params = {'name': name}
+        return self.master.call('metadata/delete', _params)
 
 
 
