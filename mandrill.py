@@ -47,6 +47,10 @@ class IPProvisionLimitError(Error):
     pass
 class UnknownPoolError(Error):
     pass
+class NoSendingHistoryError(Error):
+    pass
+class PoorReputationError(Error):
+    pass
 class UnknownIPError(Error):
     pass
 class InvalidEmptyDefaultPoolError(Error):
@@ -54,6 +58,10 @@ class InvalidEmptyDefaultPoolError(Error):
 class InvalidDeleteDefaultPoolError(Error):
     pass
 class InvalidDeleteNonEmptyPoolError(Error):
+    pass
+class InvalidCustomDNSError(Error):
+    pass
+class InvalidCustomDNSPendingError(Error):
     pass
 class MetadataFieldLimitError(Error):
     pass
@@ -81,10 +89,14 @@ ERROR_MAP = {
     'Unknown_Export': UnknownExportError,
     'IP_ProvisionLimit': IPProvisionLimitError,
     'Unknown_Pool': UnknownPoolError,
+    'NoSendingHistory': NoSendingHistoryError,
+    'PoorReputation': PoorReputationError,
     'Unknown_IP': UnknownIPError,
     'Invalid_EmptyDefaultPool': InvalidEmptyDefaultPoolError,
     'Invalid_DeleteDefaultPool': InvalidDeleteDefaultPoolError,
     'Invalid_DeleteNonEmptyPool': InvalidDeleteNonEmptyPoolError,
+    'Invalid_CustomDNS': InvalidCustomDNSError,
+    'Invalid_CustomDNSPending': InvalidCustomDNSPendingError,
     'Metadata_FieldLimit': MetadataFieldLimitError,
     'Unknown_MetadataField': UnknownMetadataFieldError
 }
@@ -144,7 +156,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.54'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.55'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1965,6 +1977,8 @@ are processed within 24 hours.
            UnknownPoolError: The provided dedicated IP pool does not exist.
            PaymentRequiredError: The requested feature requires payment.
            InvalidKeyError: The provided API key is not a valid Mandrill API key
+           NoSendingHistoryError: The user hasn't started sending yet.
+           PoorReputationError: The user's reputation is too low to continue.
            Error: A general Mandrill error has occurred
         """
         _params = {'warmup': warmup, 'pool': pool}
@@ -2266,6 +2280,8 @@ DNS for a dedicated IP.
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            UnknownIPError: The provided dedicated IP does not exist.
+           InvalidCustomDNSError: The domain name is not configured for use as the dedicated IP's custom reverse DNS.
+           InvalidCustomDNSPendingError: A custom DNS change for this dedicated IP is currently pending.
            Error: A general Mandrill error has occurred
         """
         _params = {'ip': ip, 'domain': domain}
