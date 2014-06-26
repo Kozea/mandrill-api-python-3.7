@@ -156,7 +156,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.55'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.56'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -830,7 +830,7 @@ include_expired to true to include them.
            array.  Up to 1000 rejection entries::
                [] (struct): the information for each rejection blacklist entry::
                    [].email (string): the email that is blocked
-                   [].reason (string): the type of event (hard-bounce, soft-bounce, spam, unsub) that caused this rejection
+                   [].reason (string): the type of event (hard-bounce, soft-bounce, spam, unsub, custom) that caused this rejection
                    [].detail (string): extended details about the event, such as the SMTP diagnostic for bounces or the comment for manually-created rejections
                    [].created_at (string): when the email was added to the blacklist
                    [].last_event_at (string): the timestamp of the most recent event that either created or renewed this rejection
@@ -856,6 +856,7 @@ include_expired to true to include them.
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            UnknownSubaccountError: The provided subaccount id does not exist.
+           ServiceUnavailableError: The subsystem providing this API call is down for maintenance
            Error: A general Mandrill error has occurred
         """
         _params = {'email': email, 'include_expired': include_expired, 'subaccount': subaccount}
@@ -1372,11 +1373,11 @@ class Messages(object):
            send_at (string): when this message should be sent as a UTC timestamp in YYYY-MM-DD HH:MM:SS format. If you specify a time in the past, the message will be sent immediately. An additional fee applies for scheduled email, and this feature is only available to accounts with a positive balance.
 
         Returns:
-           array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
+           array.  of structs for each recipient containing the key "email" with the email address, and details of the message status for that recipient::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
                    [].status (string): the sending status of the recipient - either "sent", "queued", "scheduled", "rejected", or "invalid"
-                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
+                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected" - one of "hard-bounce", "soft-bounce", "spam", "unsub", "custom", "invalid-sender", "invalid", "test-mode-limit", or "rule"
                    []._id (string): the message's unique id
 
 
@@ -1476,11 +1477,11 @@ class Messages(object):
            send_at (string): when this message should be sent as a UTC timestamp in YYYY-MM-DD HH:MM:SS format. If you specify a time in the past, the message will be sent immediately. An additional fee applies for scheduled email, and this feature is only available to accounts with a positive balance.
 
         Returns:
-           array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", "scheduled", or "rejected"::
+           array.  of structs for each recipient containing the key "email" with the email address, and details of the message status for that recipient::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
                    [].status (string): the sending status of the recipient - either "sent", "queued", "rejected", or "invalid"
-                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
+                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected" - one of "hard-bounce", "soft-bounce", "spam", "unsub", "custom", "invalid-sender", "invalid", "test-mode-limit", or "rule"
                    []._id (string): the message's unique id
 
 
@@ -1495,10 +1496,10 @@ class Messages(object):
         return self.master.call('messages/send-template', _params)
 
     def search(self, query='*', date_from=None, date_to=None, tags=None, senders=None, api_keys=None, limit=100):
-        """Search the content of recently sent messages and optionally narrow by date range, tags and senders
+        """Search recently sent messages and optionally narrow by date range, tags, senders, and API keys. If no date range is specified, results within the last 7 days are returned. This method may be called up to 20 times per minute. If you need the data more often, you can use <a href="/api/docs/messages.html#method=info">/messages/info.json</a> to get the information for a single message, or <a href="http://help.mandrill.com/entries/21738186-Introduction-to-Webhooks">webhooks</a> to push activity to your own application for querying.
 
         Args:
-           query (string): the search terms to find matching messages for
+           query (string): <a href="http://help.mandrill.com/entries/22211902">search terms</a> to find matching messages
            date_from (string): start date
            date_to (string): end date
            tags (array): an array of tag names to narrow the search to, will return messages that contain ANY of the tags
@@ -1741,11 +1742,11 @@ class Messages(object):
            return_path_domain (string): a custom domain to use for the messages's return-path
 
         Returns:
-           array.  of structs for each recipient containing the key "email" with the email address and "status" as either "sent", "queued", or "rejected"::
+           array.  of structs for each recipient containing the key "email" with the email address, and details of the message status for that recipient::
                [] (struct): the sending results for a single recipient::
                    [].email (string): the email address of the recipient
                    [].status (string): the sending status of the recipient - either "sent", "queued", "scheduled", "rejected", or "invalid"
-                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected"
+                   [].reject_reason (string): the reason for the rejection if the recipient status is "rejected" - one of "hard-bounce", "soft-bounce", "spam", "unsub", "custom", "invalid-sender", "invalid", "test-mode-limit", or "rule"
                    []._id (string): the message's unique id
 
 
@@ -1835,24 +1836,25 @@ class Whitelists(object):
     def __init__(self, master):
         self.master = master
 
-    def add(self, email):
+    def add(self, email, comment=None):
         """Adds an email to your email rejection whitelist. If the address is
 currently on your blacklist, that blacklist entry will be removed
 automatically.
 
         Args:
            email (string): an email address to add to the whitelist
+           comment (string): an optional description of why the email was whitelisted
 
         Returns:
            struct.  a status object containing the address and the result of the operation::
                email (string): the email address you provided
-               whether (boolean): the operation succeeded
+               added (boolean): whether the operation succeeded
 
         Raises:
            InvalidKeyError: The provided API key is not a valid Mandrill API key
            Error: A general Mandrill error has occurred
         """
-        _params = {'email': email}
+        _params = {'email': email, 'comment': comment}
         return self.master.call('whitelists/add', _params)
 
     def list(self, email=None):
