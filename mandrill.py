@@ -156,7 +156,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.56'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.57'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1324,10 +1324,11 @@ class Messages(object):
                message.signing_domain (string): a custom domain to use for SPF/DKIM signing instead of mandrill (for "via" or "on behalf of" in email clients)
                message.return_path_domain (string): a custom domain to use for the messages's return-path
                message.merge (boolean): whether to evaluate merge tags in the message. Will automatically be set to true if either merge_vars or global_merge_vars are provided.
+               message.merge_language (string): the merge tag language to use when evaluating merge tags, either mailchimp or handlebars
                message.global_merge_vars (array): global merge variables to use for all recipients. You can override these per recipient.::
                    message.global_merge_vars[] (struct): a single global merge variable::
                        message.global_merge_vars[].name (string): the global merge variable's name. Merge variable names are case-insensitive and may not start with _
-                       message.global_merge_vars[].content (string): the global merge variable's content
+                       message.global_merge_vars[].content (mixed): the global merge variable's content
 
 
                message.merge_vars (array): per-recipient merge variables, which override global merge variables with the same name.::
@@ -1336,7 +1337,7 @@ class Messages(object):
                        message.merge_vars[].vars (array): the recipient's merge variables::
                            message.merge_vars[].vars[] (struct): a single merge variable::
                                message.merge_vars[].vars[].name (string): the merge variable's name. Merge variable names are case-insensitive and may not start with _
-                               message.merge_vars[].vars[].content (string): the merge variable's content
+                               message.merge_vars[].vars[].content (mixed): the merge variable's content
 
 
 
@@ -1428,10 +1429,11 @@ class Messages(object):
                message.signing_domain (string): a custom domain to use for SPF/DKIM signing instead of mandrill (for "via" or "on behalf of" in email clients)
                message.return_path_domain (string): a custom domain to use for the messages's return-path
                message.merge (boolean): whether to evaluate merge tags in the message. Will automatically be set to true if either merge_vars or global_merge_vars are provided.
+               message.merge_language (string): the merge tag language to use when evaluating merge tags, either mailchimp or handlebars
                message.global_merge_vars (array): global merge variables to use for all recipients. You can override these per recipient.::
                    message.global_merge_vars[] (struct): a single global merge variable::
                        message.global_merge_vars[].name (string): the global merge variable's name. Merge variable names are case-insensitive and may not start with _
-                       message.global_merge_vars[].content (string): the global merge variable's content
+                       message.global_merge_vars[].content (mixed): the global merge variable's content
 
 
                message.merge_vars (array): per-recipient merge variables, which override global merge variables with the same name.::
@@ -1440,7 +1442,7 @@ class Messages(object):
                        message.merge_vars[].vars (array): the recipient's merge variables::
                            message.merge_vars[].vars[] (struct): a single merge variable::
                                message.merge_vars[].vars[].name (string): the merge variable's name. Merge variable names are case-insensitive and may not start with _
-                               message.merge_vars[].vars[].content (string): the merge variable's content
+                               message.merge_vars[].vars[].content (mixed): the merge variable's content
 
 
 
