@@ -156,7 +156,7 @@ class Mandrill(object):
         params = json.dumps(params)
         self.log('POST to %s%s.json: %s' % (ROOT, url, params))
         start = time.time()
-        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.57'})
+        r = self.session.post('%s%s.json' % (ROOT, url), data=params, headers={'content-type': 'application/json', 'user-agent': 'Mandrill-Python/1.0.58'})
         try:
             remote_addr = r.raw._original_response.fp._sock.getpeername() # grab the remote_addr before grabbing the text since the socket will go away
         except:
@@ -1763,7 +1763,7 @@ class Messages(object):
         return self.master.call('messages/send-raw', _params)
 
     def list_scheduled(self, to=None):
-        """Queries your scheduled emails by sender or recipient, or both.
+        """Queries your scheduled emails.
 
         Args:
            to (string): an optional recipient address to restrict results to
@@ -2937,7 +2937,7 @@ account, it will be added automatically.
 
     def verify_domain(self, domain, mailbox):
         """Sends a verification email in order to verify ownership of a domain.
-Domain verification is an optional step to confirm ownership of a domain. Once a
+Domain verification is a required step to confirm ownership of a domain. Once a
 domain has been verified in a Mandrill account, other accounts may not have their
 messages signed by that domain unless they also verify the domain. This prevents
 other Mandrill accounts from sending mail signed by your domain.
