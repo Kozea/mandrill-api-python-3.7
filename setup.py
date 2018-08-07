@@ -2,11 +2,11 @@ from setuptools import setup
 import os.path
 
 setup(
-    name='mandrill',
-    version='1.0.58',
-    author='Mandrill Devs',
+    name='mandrill-37',
+    version='1.1.0',
+    author='Mandrill Devs. Forked by Florian Mounier',
     author_email='community@mandrill.com',
-    description='A CLI client and Python API library for the Mandrill email as a service platform.',
+    description='A CLI client and Python API library for the Mandrill email as a service platform. Forked fork python 3.7 support',
     long_description=open(os.path.join(os.path.dirname(__file__), 'README')).read(),
     license='Apache-2.0',
     keywords='mandrill email api',
@@ -14,6 +14,7 @@ setup(
     scripts=['scripts/mandrill', 'scripts/sendmail.mandrill'],
     py_modules=['mandrill'],
     install_requires=['requests >= 0.13.2', 'docopt == 0.4.0'],
+    provides='mandrill',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
