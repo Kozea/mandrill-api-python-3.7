@@ -1292,7 +1292,7 @@ class Messages(object):
     def __init__(self, master):
         self.master = master
 
-    def send(self, message, async=False, ip_pool=None, send_at=None):
+    def send(self, message, async_=False, ip_pool=None, send_at=None):
         """Send a new transactional message through Mandrill
 
         Args:
@@ -1388,10 +1388,10 @@ class Messages(object):
            UnknownSubaccountError: The provided subaccount id does not exist.
            Error: A general Mandrill error has occurred
         """
-        _params = {'message': message, 'async': async, 'ip_pool': ip_pool, 'send_at': send_at}
+        _params = {'message': message, 'async': async_, 'ip_pool': ip_pool, 'send_at': send_at}
         return self.master.call('messages/send', _params)
 
-    def send_template(self, template_name, template_content, message, async=False, ip_pool=None, send_at=None):
+    def send_template(self, template_name, template_content, message, async_=False, ip_pool=None, send_at=None):
         """Send a new transactional message through Mandrill using a template
 
         Args:
@@ -1494,7 +1494,7 @@ class Messages(object):
            UnknownSubaccountError: The provided subaccount id does not exist.
            Error: A general Mandrill error has occurred
         """
-        _params = {'template_name': template_name, 'template_content': template_content, 'message': message, 'async': async, 'ip_pool': ip_pool, 'send_at': send_at}
+        _params = {'template_name': template_name, 'template_content': template_content, 'message': message, 'async': async_, 'ip_pool': ip_pool, 'send_at': send_at}
         return self.master.call('messages/send-template', _params)
 
     def search(self, query='*', date_from=None, date_to=None, tags=None, senders=None, api_keys=None, limit=100):
@@ -1729,7 +1729,7 @@ class Messages(object):
         _params = {'raw_message': raw_message}
         return self.master.call('messages/parse', _params)
 
-    def send_raw(self, raw_message, from_email=None, from_name=None, to=None, async=False, ip_pool=None, send_at=None, return_path_domain=None):
+    def send_raw(self, raw_message, from_email=None, from_name=None, to=None, async_=False, ip_pool=None, send_at=None, return_path_domain=None):
         """Take a raw MIME document for a message, and send it exactly as if it were sent through Mandrill's SMTP servers
 
         Args:
@@ -1759,7 +1759,7 @@ class Messages(object):
            UnknownSubaccountError: The provided subaccount id does not exist.
            Error: A general Mandrill error has occurred
         """
-        _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to, 'async': async, 'ip_pool': ip_pool, 'send_at': send_at, 'return_path_domain': return_path_domain}
+        _params = {'raw_message': raw_message, 'from_email': from_email, 'from_name': from_name, 'to': to, 'async': async_, 'ip_pool': ip_pool, 'send_at': send_at, 'return_path_domain': return_path_domain}
         return self.master.call('messages/send-raw', _params)
 
     def list_scheduled(self, to=None):
@@ -3161,6 +3161,3 @@ class Metadata(object):
         """
         _params = {'name': name}
         return self.master.call('metadata/delete', _params)
-
-
-
